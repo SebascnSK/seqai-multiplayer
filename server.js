@@ -168,7 +168,6 @@ class Match {
         }, QUESTION_DURATION_MS);
     }
 
-    // <<< ZMENA V HANDLE ANSWER >>>
     handleAnswer(player, answer, time) {
         if (player.answered) return;
 
@@ -187,7 +186,6 @@ class Match {
         }
     }
     
-    // <<< NOVÁ METÓDA pre medzistav >>>
     sendAnswerStatusUpdate() {
         this.sendToAll({
             type: 'match.status_update',
@@ -199,7 +197,6 @@ class Match {
         });
     }
 
-    // <<< ZMENA V EVALUATE QUESTION - Obojstranné bodovanie >>>
     evaluateQuestion() {
         
         const currentQ = this.questions[this.currentQuestionIndex];
