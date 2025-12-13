@@ -39,7 +39,6 @@ const BATTLE_QUESTION_COUNT = 10;
 const QUESTION_DURATION_MS = 8000;
 const TIME_TOLERANCE_MS = 50; // Tolerancia pre remízu v čase
 
-
 const matchmakingQueue = [];
 const activeMatches = new Map(); 
 
@@ -119,6 +118,9 @@ class Match {
         player.readyForStart = true;
         
         if (this.player1.readyForStart && this.player2.readyForStart) {
+            // Reset ready stavu, aby sa to nespúšťalo po každej otázke
+            this.player1.readyForStart = false;
+            this.player2.readyForStart = false; 
             this.sendNextQuestion();
         }
     }
