@@ -37,7 +37,6 @@ const ALL_QUESTIONS = [
 
 const BATTLE_QUESTION_COUNT = 10;
 const QUESTION_DURATION_MS = 8000;
-const TIME_TOLERANCE_MS = 50; // Tolerancia pre remízu v čase
 
 const matchmakingQueue = [];
 const activeMatches = new Map(); 
@@ -62,7 +61,6 @@ class Player {
         this.matchId = null;
         this.lastAnswer = null;
         this.status = '?'; // '?', 'Odpovedané', 'Správne', 'Nesprávne'
-        this.readyForStart = false; // NOVÝ stav pre synchronizáciu úvodu
     }
 }
 
@@ -105,35 +103,22 @@ class Match {
 
     start() {
         activeMatches.set(this.id, this);
-        // Odoslať iba info o nájdenom zápase, klient spustí animáciu
         this.sendToAll({
             type: 'match.found',
             payload: this.getMatchData()
         });
-        // Neodosiela sa hneď otázka, čaká sa na match.ready_for_start od oboch klientov
-    }
-    
-    // Nová metóda na synchronizáciu štartu
-    handleReadyForStart(player) {
-        player.readyForStart = true;
-        
-        if (this.player1.readyForStart && this.player2.readyForStart) {
-            // Reset ready stavu, aby sa to nespúšťalo po každej otázke
-            this.player1.readyForStart = false;
-            this.player2.readyForStart = false; 
-            this.sendNextQuestion();
-        }
+        this.sendNextQuestion();
     }
 
     getMatchData() {
-        const currentQ = this.questions[this.currentQuestionIndex] || null;
+        const currentQ = this.questions[this.currentQuestionIndex];
         
         // Odstránime "correct" pred odoslaním na klienta
-        const questionData = currentQ ? {
+        const questionData = {
             q: currentQ.q,
             a: currentQ.a, // Randomizované odpovede
             startTime: this.currentQuestionStartTime 
-        } : null;
+        };
 
         return {
             matchId: this.id,
@@ -215,43 +200,32 @@ class Match {
     evaluateQuestion() {
         
         const currentQ = this.questions[this.currentQuestionIndex];
-        let correctP1 = this.player1.lastAnswer === currentQ.correct;
-        let correctP2 = this.player2.lastAnswer === currentQ.correct;
+        let correctP1 = false;
+        let correctP2 = false;
         
-        // Finalizácia statusov po uplynutí času
-        this.player1.status = correctP1 ? 'Správne' : (this.player1.answered ? 'Nesprávne' : '?');
-        this.player2.status = correctP2 ? 'Správne' : (this.player2.answered ? 'Nesprávne' : '?');
-
-        // NOVÁ BODOVACIA LOGIKA
-        let p1GetsPoint = false;
-        let p2GetsPoint = false;
-        
-        // Case 1: Obaja odpovedali správne
-        if (correctP1 && correctP2) {
-            const timeDiff = Math.abs(this.player1.time - this.player2.time);
-            
-            if (timeDiff <= TIME_TOLERANCE_MS) { // Remíza v čase
-                p1GetsPoint = true;
-                p2GetsPoint = true;
-            } else if (this.player1.time < this.player2.time) { // P1 rýchlejší
-                p1GetsPoint = true;
-            } else { // P2 rýchlejší
-                p2GetsPoint = true;
+        // 1. Vypočítanie finálnych statusov
+        this.players.forEach(p => {
+            if (p.status === '?') {
+                // Timeout - ostane '?'
+            } else if (p.status === 'Odpovedané') {
+                // Skontrolujeme odpoveď len u tých, ktorí odpovedali
+                if (p.lastAnswer === currentQ.correct) {
+                    p.status = 'Správne';
+                    if (p === this.player1) correctP1 = true;
+                    else correctP2 = true;
+                } else {
+                    p.status = 'Nesprávne';
+                }
             }
-        } 
-        // Case 2: P1 správne, P2 nesprávne/timeout
-        else if (correctP1 && !correctP2) {
-            p1GetsPoint = true;
-        } 
-        // Case 3: P2 správne, P1 nesprávne/timeout
-        else if (correctP2 && !correctP1) {
-            p2GetsPoint = true;
-        } 
-        // Case 4: Obaja nesprávne/timeout - nikto nezíska bod
+        });
 
-        if (p1GetsPoint) this.player1.score += 1;
-        if (p2GetsPoint) this.player2.score += 1;
-
+        // 2. Pripočítanie bodov: Ak obaja správne, obaja dostanú bod
+        if (correctP1) {
+            this.player1.score += 1;
+        } 
+        if (correctP2) {
+            this.player2.score += 1;
+        }
 
         // 3. Odoslanie finálneho stavu
         this.sendToAll({
@@ -291,10 +265,7 @@ class Match {
 
     cleanup() {
         activeMatches.delete(this.id);
-        this.players.forEach(p => {
-             p.matchId = null;
-             p.readyForStart = false; // Dôležité: Reset ready stavu
-        });
+        this.players.forEach(p => p.matchId = null);
     }
 }
 
@@ -335,15 +306,6 @@ wss.on('connection', (ws) => {
                 if (!player) {
                     player = new Player(ws, data.username, data.avatar);
                     tryMatchmaking(player);
-                }
-                break;
-            
-            case 'match.ready_for_start':
-                if (player && player.matchId) {
-                    const match = activeMatches.get(player.matchId);
-                    if (match) {
-                        match.handleReadyForStart(player);
-                    }
                 }
                 break;
             
