@@ -31,6 +31,8 @@ const ALL_QUESTIONS = [
     { q: "Čo je formálny systém na štúdium správneho usudzovania?", a: ["Logika", "Etika", "Estetika", "Metafyzika"], correct: "Logika" },
     { q: "Ktorý štát USA má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia" },
     { q: "Aká je jednotka merania tlaku?", a: ["Pascal", "Joule", "Watt", "Ohm"], correct: "Pascal" },
+    { q: "Aká je skratka pre bezpilotné vzdušné prostriedky?", a: ["UAV", "BVP", "IFF", "PVOS"], correct: "UAV" },
+    { q: "Ktorá z uvedených vojenských hodností je najvyššia?", a: ["Plukovník", "Kapitán", "Major", "Poručík"], correct: "Plukovník"},
     { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
 ];
 
