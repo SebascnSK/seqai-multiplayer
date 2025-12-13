@@ -1,34 +1,56 @@
 // server.js
-
+// !!! POZNÁMKA: Pre spustenie tohto kódu potrebujete nainštalovať 'ws' balíček (npm install ws) a spustiť súbor cez Node.js (node server.js).
 const WebSocket = require('ws');
 
 // Konfigurácia WebSocket Servera
 const wss = new WebSocket.Server({ port: 8080 }, () => {
+    // !!! DÔLEŽITÉ: Ak testujete lokálne, v home.html musíte zmeniť 'wss://seqai-ws-server.onrender.com' na 'ws://localhost:8080'
     console.log('WebSocket Server beží na porte ws://localhost:8080');
     console.log('Pripravený na real-time súboje!');
 });
 
-// Zoznam všetkých otázok
+// =======================================================
+// --- ROZŠÍRENÁ BANKA OTÁZOK (Min. 20) ---
+// =======================================================
 const ALL_QUESTIONS = [
-    { q: "Ktorý chemický prvok má najvyššiu elektronegativitu?", a: ["Fluór", "Kyslík", "Uhlík", "Vodík"], correct: "Fluór" },
-    { q: "Kedy bola podpísaná deklarácia nezávislosti USA?", a: ["1776", "1789", "1812", "1492"], correct: "1776" },
-    { q: "Koľko planét je v slnečnej sústave?", a: ["8", "9", "7", "10"], correct: "8" },
-    { q: "Ako sa volá najväčší ľudský orgán?", a: ["Koža", "Mozog", "Pečeň", "Srdce"], correct: "Koža" },
-    { q: "Ako sa nazýva strach z výšok?", a: ["Akrofóbia", "Filofóbia", "Aviafóbia", "Musofóbia"], correct: "Akrofóbia" },
-    { q: "Aká je hlavná zložka zemskej atmosféry?", a: ["Dusík", "Kyslík", "Argón", "Oxid uhličitý"], correct: "Dusík" },
-    { q: "Kto napísal Rómea a Júliu?", a: ["William Shakespeare", "Charles Dickens", "Jane Austen", "George Orwell"], correct: "William Shakespeare" },
-    { q: "Ktorá mena sa používa v Japonsku?", a: ["Jen", "Yuan", "Won", "Rupia"], correct: "Jen" },
-    { q: "Koľko dní trvá obežná doba Mesiaca okolo Zeme?", a: ["27.3", "30", "28", "29.5"], correct: "27.3" },
-    { q: "Kto namaľoval Monu Lízu?", a: ["Leonardo da Vinci", "Vincent van Gogh", "Pablo Picasso", "Claude Monet"], correct: "Leonardo da Vinci" }
+    { q: "Ktoré zviera je najväčšie na Zemi?", a: ["Velryba modrá", "Slon africký", "Žirafa", "Nosorožec biely"], correct: "Velryba modrá" },
+    { q: "Aký je chemický symbol zlata?", a: ["Au", "Ag", "Fe", "Cu"], correct: "Au" },
+    { q: "Ktorý kontinent je najväčší podľa rozlohy?", a: ["Ázia", "Afrika", "Severná Amerika", "Európa"], correct: "Ázia" },
+    { q: "Ktoré mesto je hlavné mesto Austrálie?", a: ["Canberra", "Sydney", "Melbourne", "Perth"], correct: "Canberra" },
+    { q: "Koľko bitov má jeden byte?", a: ["8", "16", "32", "64"], correct: "8" },
+    { q: "Ktorá je najdlhšia rieka na svete?", a: ["Níl", "Amazonka", "Jang-c’-ťiang", "Mississippi"], correct: "Amazonka" },
+    { q: "Kto objavil Ameriku v roku 1492?", a: ["Krištof Kolumbus", "Ferdinand Magellan", "Marco Polo", "Vasco da Gama"], correct: "Krištof Kolumbus" },
+    { q: "Akú farbu má smaragd?", a: ["Zelenú", "Červenú", "Modrú", "Žltú"], correct: "Zelenú" },
+    { q: "Ktorá krajina je známa ako Zem vychádzajúceho slnka?", a: ["Japonsko", "Čína", "Južná Kórea", "Vietnam"], correct: "Japonsko" },
+    { q: "Čo je Fibonacciho postupnosť?", a: ["Súčet predchádzajúcich dvoch", "Násobenie dvomi", "Delenie tromi", "Odmocnina"], correct: "Súčet predchádzajúcich dvoch" },
+    // Ďalšie otázky pre zabezpečenie 10 unikátnych otázok
+    { q: "Ktorá planéta je najbližšie k Slnku?", a: ["Merkúr", "Venuša", "Mars", "Jupiter"], correct: "Merkúr" },
+    { q: "Ktorý plyn tvorí väčšinu zemskej atmosféry?", a: ["Dusík", "Kyslík", "Argón", "Oxid uhličitý"], correct: "Dusík" },
+    { q: "Koľko trvá obeh Zeme okolo Slnka?", a: ["365.25 dňa", "360 dní", "365 dní", "365.5 dňa"], correct: "365.25 dňa" },
+    { q: "Ktorý orgán detoxikuje krv?", a: ["Pečeň", "Obličky", "Srdce", "Pľúca"], correct: "Pečeň" },
+    { q: "Ako sa nazýva najvyšší vrch Afriky?", a: ["Kilimandžáro", "Mount Kenya", "Elbrus", "Mont Blanc"], correct: "Kilimandžáro" },
+    { q: "Ktorá je hlavná zložka skla?", a: ["Oxid kremičitý", "Uhličitan vápenatý", "Oxid hlinitý", "Sodík"], correct: "Oxid kremičitý" },
+    { q: "Kto namaľoval 'Monu Lízu'?", a: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Claude Monet"], correct: "Leonardo da Vinci" },
+    { q: "Ktorý prvok má atómové číslo 1?", a: ["Vodík", "Hélium", "Kyslík", "Uhlík"], correct: "Vodík" },
+    { q: "Čo je 'blockchain'?", a: ["Decentralizovaná databáza", "Typ meny", "Počítačový vírus", "Herný engine"], correct: "Decentralizovaná databáza" },
+    { q: "Ako sa nazýva hudobný nástroj so 4 strunami, najmenší zo sláčikových?", a: ["Husle", "Viola", "Violončelo", "Kontrabas"], correct: "Husle" }
 ];
+
 const BATTLE_QUESTION_COUNT = 10;
 const QUESTION_DURATION_MS = 8000;
 
-// Fronta pre Matchmaking a aktívne zápasy
 const matchmakingQueue = [];
-const activeMatches = new Map(); // Map<matchId, Match>
+const activeMatches = new Map(); 
 
-// Trieda pre reprezentáciu hráča
+function shuffleArray(array) {
+    // Vytvorí kľúče, zoradí ich náhodne a vráti pôvodné hodnoty v novom poradí
+    const shuffled = array.map(v => ({ v, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(o => o.v);
+    
+    return shuffled;
+}
+
 class Player {
     constructor(ws, username, avatar) {
         this.ws = ws;
@@ -38,10 +60,11 @@ class Player {
         this.answered = false;
         this.time = Infinity;
         this.matchId = null;
+        this.lastAnswer = null;
+        this.status = '?'; // '?', 'Správne', 'Nesprávne'
     }
 }
 
-// Trieda pre reprezentáciu zápasu
 class Match {
     constructor(player1, player2) {
         this.id = Math.random().toString(36).substring(2, 9);
@@ -51,41 +74,53 @@ class Match {
         this.questions = this.selectQuestions(ALL_QUESTIONS, BATTLE_QUESTION_COUNT);
         this.currentQuestionIndex = 0;
         this.questionTimer = null;
+        this.currentQuestionStartTime = Date.now(); 
 
         player1.matchId = this.id;
         player2.matchId = this.id;
     }
 
+    // --- OPRAVENÁ METÓDA: Zaručená randomizácia 10 otázok a ich odpovedí ---
     selectQuestions(source, count) {
-        // Jednoduchá implementácia zamiešania a výberu prvých 'count' otázok
-        const shuffled = [...source].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, count).map(q => ({
-            q: q.q,
-            a: q.a,
-            correct: q.correct
-        }));
+        // Vytvorenie kópie, náhodné zamiešanie a výber top 'count'
+        const shuffledQuestions = shuffleArray(source).slice(0, count); 
+        
+        // Randomizácia odpovedí v rámci vybraných otázok
+        return shuffledQuestions.map(q => {
+            
+            // Naklonujeme pole odpovedí
+            const answers = [...q.a];
+            
+            // Randomizujeme pole odpovedí pre túto konkrétnu otázku
+            const randomizedAnswers = shuffleArray(answers);
+
+            // Vrátime otázku s randomizovanými odpoveďami
+            return {
+                q: q.q,
+                a: randomizedAnswers, 
+                correct: q.correct // Správna odpoveď zostane pre vyhodnotenie
+            };
+        });
     }
 
     start() {
         activeMatches.set(this.id, this);
         this.sendToAll({
             type: 'match.found',
-            payload: this.getMatchData(false)
+            payload: this.getMatchData()
         });
         this.sendNextQuestion();
     }
 
-    getMatchData(includeAnswers) {
+    getMatchData() {
         const currentQ = this.questions[this.currentQuestionIndex];
+        
+        // Odstránime "correct" pred odoslaním na klienta
         const questionData = {
             q: currentQ.q,
-            a: currentQ.a,
-            startTime: new Date().toISOString()
+            a: currentQ.a, // Randomizované odpovede
+            startTime: this.currentQuestionStartTime 
         };
-
-        if (includeAnswers) {
-            questionData.correct = currentQ.correct;
-        }
 
         return {
             matchId: this.id,
@@ -95,7 +130,9 @@ class Match {
             player2Score: this.player2.score,
             questionsCount: this.questions.length,
             currentQuestionIndex: this.currentQuestionIndex + 1,
-            currentQuestion: questionData
+            currentQuestion: questionData,
+            player1Status: this.player1.status, 
+            player2Status: this.player2.status 
         };
     }
 
@@ -113,80 +150,97 @@ class Match {
             this.end();
             return;
         }
+        
+        this.currentQuestionStartTime = Date.now(); 
 
-        // Reset stavu odpovedí pre novú otázku
         this.players.forEach(p => {
             p.answered = false;
             p.time = Infinity;
+            p.lastAnswer = null;
+            p.status = '?'; // Reset statusu na '?' (Čakám)
         });
 
         this.sendToAll({
             type: 'match.next_question',
-            payload: this.getMatchData(false)
+            payload: this.getMatchData()
         });
 
-        // Nastavenie časovača na vyhodnotenie otázky
         this.questionTimer = setTimeout(() => {
             this.evaluateQuestion();
         }, QUESTION_DURATION_MS);
     }
 
+    // --- OPRAVENÁ METÓDA: Už neposiela status "Odpovedané" ---
     handleAnswer(player, answer, time) {
         if (player.answered) return;
-        
+
         player.answered = true;
         player.time = time;
-
-        const currentQ = this.questions[this.currentQuestionIndex];
-        let isCorrect = (answer === currentQ.correct);
+        player.lastAnswer = answer;
         
-        if (isCorrect) {
-            player.score++;
-        }
-
+        // Ak sú obaja hotoví, preskočíme časovač a vyhodnotíme
         const opponent = player === this.player1 ? this.player2 : this.player1;
         
-        this.sendScoreUpdate(player, isCorrect);
-        
-        // Ak je aj súper už odpovedal alebo prešiel čas, prejdeme na ďalšiu otázku
-        if (opponent.answered || player.answered && opponent.answered) {
+        if (opponent.answered) {
             clearTimeout(this.questionTimer);
             this.evaluateQuestion();
         }
     }
     
-    sendScoreUpdate(player, isCorrect) {
-         this.sendToAll({
-            type: 'match.update',
-            payload: {
-                player1Score: this.player1.score,
-                player2Score: this.player2.score,
-                playerResult: player.username === this.player1.username ? (isCorrect ? 'Správne' : 'Nesprávne') : '?',
-                opponentResult: player.username === this.player2.username ? (isCorrect ? 'Správne' : 'Nesprávne') : '?'
+    // --- OPRAVENÁ METÓDA: Finálne vyhodnotenie otázky s finálnymi statusmi ---
+    evaluateQuestion() {
+        
+        const currentQ = this.questions[this.currentQuestionIndex];
+        let correctP1 = false;
+        let correctP2 = false;
+        
+        // 1. Vypočítanie finálnych statusov
+        this.players.forEach(p => {
+            if (!p.answered) {
+                p.status = '?'; // Zmena: Ak neodpovedal (Timeout), posielame '?' - klient to interpretuje ako Timeout
+            } else {
+                if (p.lastAnswer === currentQ.correct) {
+                    p.status = 'Správne';
+                    if (p === this.player1) correctP1 = true;
+                    else correctP2 = true;
+                } else {
+                    p.status = 'Nesprávne';
+                }
             }
         });
-    }
 
-    evaluateQuestion() {
-        // Vyhodnotenie po uplynutí času (alebo rýchlej odpovedi oboch)
+        // 2. Pripočítanie bodov (Faster correct answer wins)
+        if (correctP1 && correctP2) {
+            if (this.player1.time <= this.player2.time) {
+                this.player1.score += 1;
+            } else {
+                this.player2.score += 1;
+            }
+        } 
+        else if (correctP1) {
+            this.player1.score += 1;
+        } else if (correctP2) {
+            this.player2.score += 1;
+        }
         
-        // Final Score Update (pre prípad, že nejaký bod nebol odoslaný)
+        // 3. Odoslanie finálneho stavu
         this.sendToAll({
             type: 'match.update',
             payload: {
-                player1Score: this.player1.score,
-                player2Score: this.player2.score,
-                playerResult: this.player1.answered ? (this.questions[this.currentQuestionIndex].correct === this.player1.answered ? 'Správne' : 'Nesprávne') : 'Timeout',
-                opponentResult: this.player2.answered ? (this.questions[this.currentQuestionIndex].correct === this.player2.answered ? 'Správne' : 'Nesprávne') : 'Timeout'
+                ...this.getMatchData(), 
+                correctAnswer: currentQ.correct, // Posielame správnu odpoveď pre zafarbenie tlačidiel
+                player1Status: this.player1.status, 
+                player2Status: this.player2.status
             }
         });
         
-        // Prechod na ďalšiu otázku
+        // 4. Prechod na ďalšiu otázku
         this.currentQuestionIndex++;
         
+        // Čakáme 1.5 sekundy na zobrazenie výsledku
         setTimeout(() => {
              this.sendNextQuestion();
-        }, 1500); // 1.5 sekundy na zobrazenie výsledku
+        }, 1500); 
     }
 
     end() {
@@ -212,14 +266,13 @@ class Match {
 }
 
 // =======================================================
-// --- Matchmaking Logic ---
+// --- Matchmaking Logic (Bezo zmien) ---
 // =======================================================
 
 function tryMatchmaking(player) {
     if (matchmakingQueue.length > 0) {
-        const opponent = matchmakingQueue.shift(); // Vyberieme prvého z fronty
+        const opponent = matchmakingQueue.shift(); 
         
-        // Ak sa náhodou sám odpojil, preskočíme
         if (opponent.ws.readyState !== WebSocket.OPEN) {
             tryMatchmaking(player);
             return;
@@ -256,13 +309,23 @@ wss.on('connection', (ws) => {
                 if (player && player.matchId) {
                     const match = activeMatches.get(player.matchId);
                     if (match) {
-                        match.handleAnswer(player, data.answer, data.time);
+                        
+                        // Zabezpečenie: kontrola, že čas neuplynul
+                        const timeElapsed = Date.now() - match.currentQuestionStartTime; 
+                        
+                        if (timeElapsed < QUESTION_DURATION_MS) {
+                             match.handleAnswer(player, data.answer, data.time);
+                        } else if (!player.answered) {
+                             // Ak už čas uplynul, ale hráč ešte neodpovedal
+                             console.log(`Hráč ${player.username} odpovedal po limite. Ignorujem.`);
+                             // Ak odpovie po limite, považujeme to za nesprávne (status je už '?' alebo 'Nesprávne' ak je súper rýchlejší)
+                             // V tomto prípade nerobíme nič, necháme časovač vypršať/súpera vyhodnotiť.
+                        }
                     }
                 }
                 break;
             
             case 'matchmaking.exit':
-                // Hráč opustil matchmaking (napr. stlačil X)
                 if (player) {
                     const index = matchmakingQueue.indexOf(player);
                     if (index > -1) {
@@ -274,25 +337,26 @@ wss.on('connection', (ws) => {
     });
 
     ws.on('close', () => {
-        // Odstránenie z matchmaking fronty
         if (player) {
             const index = matchmakingQueue.indexOf(player);
             if (index > -1) {
                 matchmakingQueue.splice(index, 1);
             }
 
-            // Oznam o odpojení súpera, ak bol v aktívnom zápase
             if (player.matchId) {
                 const match = activeMatches.get(player.matchId);
                 if (match) {
+                    clearTimeout(match.questionTimer); 
+                    
                     const opponent = match.player1 === player ? match.player2 : match.player1;
                     if (opponent.ws.readyState === WebSocket.OPEN) {
+                        // Poslať správu o víťazstve (Opponent disconnect)
                         opponent.ws.send(JSON.stringify({
                             type: 'opponent.disconnect',
                             message: `${player.username} sa odpojil(a). Víťazstvo!`,
                         }));
                     }
-                    match.cleanup(); // Odstránenie zápasu
+                    match.cleanup(); 
                 }
             }
         }
