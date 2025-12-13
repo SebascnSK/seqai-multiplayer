@@ -209,10 +209,7 @@ class Match {
         // 1. Vypočítanie finálnych statusov
         this.players.forEach(p => {
             if (p.status === '?') {
-                // Timeout - ostane '?' pre server, ale klient to vyhodnotí ako Nesprávne/Čas vypršal
-                // Ak chceme explicitne posielať 'Nesprávne' v prípade timeoutu:
-                p.status = '?'; // Ponecháme '?' na serveri, aby bolo jasné, že neodpovedal.
-                
+                // Timeout - ostane '?'
             } else if (p.status === 'Odpovedané') {
                 // Skontrolujeme odpoveď len u tých, ktorí odpovedali
                 if (p.lastAnswer === currentQ.correct) {
