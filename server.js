@@ -290,7 +290,7 @@ function tryMatchmaking(player) {
         matchmakingQueue.push(player);
         player.ws.send(JSON.stringify({
             type: 'matchmaking.waiting',
-            message: 'Čakám na súpera vo fronte...'
+            message: 'Hľadá sa protihráč...'
         }));
     }
 }
@@ -364,3 +364,4 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
