@@ -1,5 +1,5 @@
 // server.js
-// !!! POZNÁMKA: Pre spustenie tohto kódu potrebujete nainštalovať 'ws' balíček (npm install ws) a spustiť súbor cez Node.js (node server.js).
+
 const WebSocket = require('ws');
 
 // Konfigurácia WebSocket Servera
@@ -61,7 +61,7 @@ class Player {
         this.time = Infinity;
         this.matchId = null;
         this.lastAnswer = null;
-        this.status = '?'; // '?', 'Správne', 'Nesprávne'
+        this.status = '?'; // '?', 'Odpovedané', 'Správne', 'Nesprávne'
     }
 }
 
@@ -80,7 +80,6 @@ class Match {
         player2.matchId = this.id;
     }
 
-    // --- OPRAVENÁ METÓDA: Zaručená randomizácia 10 otázok a ich odpovedí ---
     selectQuestions(source, count) {
         // Vytvorenie kópie, náhodné zamiešanie a výber top 'count'
         const shuffledQuestions = shuffleArray(source).slice(0, count); 
@@ -170,15 +169,17 @@ class Match {
         }, QUESTION_DURATION_MS);
     }
 
-    // --- OPRAVENÁ METÓDA: Už neposiela status "Odpovedané" ---
+    // <<< ZMENA V HANDLE ANSWER >>>
     handleAnswer(player, answer, time) {
         if (player.answered) return;
 
         player.answered = true;
         player.time = time;
         player.lastAnswer = answer;
+        player.status = 'Odpovedané'; // <<< NOVÝ MEDZISTAV
         
-        // Ak sú obaja hotoví, preskočíme časovač a vyhodnotíme
+        this.sendAnswerStatusUpdate(); // <<< OKAMŽITÁ AKTUALIZÁCIA STAVU
+
         const opponent = player === this.player1 ? this.player2 : this.player1;
         
         if (opponent.answered) {
@@ -187,7 +188,19 @@ class Match {
         }
     }
     
-    // --- OPRAVENÁ METÓDA: Finálne vyhodnotenie otázky s finálnymi statusmi ---
+    // <<< NOVÁ METÓDA pre medzistav >>>
+    sendAnswerStatusUpdate() {
+        this.sendToAll({
+            type: 'match.status_update',
+            payload: {
+                matchId: this.id,
+                player1Status: this.player1.status, 
+                player2Status: this.player2.status  
+            }
+        });
+    }
+
+    // <<< ZMENA V EVALUATE QUESTION - Obojstranné bodovanie >>>
     evaluateQuestion() {
         
         const currentQ = this.questions[this.currentQuestionIndex];
@@ -196,9 +209,10 @@ class Match {
         
         // 1. Vypočítanie finálnych statusov
         this.players.forEach(p => {
-            if (!p.answered) {
-                p.status = '?'; // Zmena: Ak neodpovedal (Timeout), posielame '?' - klient to interpretuje ako Timeout
-            } else {
+            if (p.status === '?') {
+                p.status = '?'; // Hráč neodpovedal (Timeout) - Klient to interpretuje ako Timeout/Nesprávne.
+            } else if (p.status === 'Odpovedané') {
+                // Skontrolujeme odpoveď len u tých, ktorí odpovedali
                 if (p.lastAnswer === currentQ.correct) {
                     p.status = 'Správne';
                     if (p === this.player1) correctP1 = true;
@@ -209,26 +223,20 @@ class Match {
             }
         });
 
-        // 2. Pripočítanie bodov (Faster correct answer wins)
-        if (correctP1 && correctP2) {
-            if (this.player1.time <= this.player2.time) {
-                this.player1.score += 1;
-            } else {
-                this.player2.score += 1;
-            }
-        } 
-        else if (correctP1) {
+        // 2. Pripočítanie bodov: Ak obaja správne, obaja dostanú bod
+        if (correctP1) {
             this.player1.score += 1;
-        } else if (correctP2) {
+        } 
+        if (correctP2) {
             this.player2.score += 1;
         }
-        
+
         // 3. Odoslanie finálneho stavu
         this.sendToAll({
             type: 'match.update',
             payload: {
                 ...this.getMatchData(), 
-                correctAnswer: currentQ.correct, // Posielame správnu odpoveď pre zafarbenie tlačidiel
+                correctAnswer: currentQ.correct, 
                 player1Status: this.player1.status, 
                 player2Status: this.player2.status
             }
@@ -316,10 +324,7 @@ wss.on('connection', (ws) => {
                         if (timeElapsed < QUESTION_DURATION_MS) {
                              match.handleAnswer(player, data.answer, data.time);
                         } else if (!player.answered) {
-                             // Ak už čas uplynul, ale hráč ešte neodpovedal
                              console.log(`Hráč ${player.username} odpovedal po limite. Ignorujem.`);
-                             // Ak odpovie po limite, považujeme to za nesprávne (status je už '?' alebo 'Nesprávne' ak je súper rýchlejší)
-                             // V tomto prípade nerobíme nič, necháme časovač vypršať/súpera vyhodnotiť.
                         }
                     }
                 }
