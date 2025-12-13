@@ -13,26 +13,25 @@ const wss = new WebSocket.Server({ port: 8080 }, () => {
 // --- ROZŠÍRENÁ BANKA OTÁZOK (Min. 20) ---
 // =======================================================
 const ALL_QUESTIONS = [
-    { q: "Ktoré zviera je najväčšie na Zemi?", a: ["Velryba modrá", "Slon africký", "Žirafa", "Nosorožec biely"], correct: "Velryba modrá" },
-    { q: "Aký je chemický symbol zlata?", a: ["Au", "Ag", "Fe", "Cu"], correct: "Au" },
-    { q: "Ktorý kontinent je najväčší podľa rozlohy?", a: ["Ázia", "Afrika", "Severná Amerika", "Európa"], correct: "Ázia" },
-    { q: "Ktoré mesto je hlavné mesto Austrálie?", a: ["Canberra", "Sydney", "Melbourne", "Perth"], correct: "Canberra" },
-    { q: "Koľko bitov má jeden byte?", a: ["8", "16", "32", "64"], correct: "8" },
-    { q: "Ktorá je najdlhšia rieka na svete?", a: ["Níl", "Amazonka", "Jang-c’-ťiang", "Mississippi"], correct: "Amazonka" },
-    { q: "Kto objavil Ameriku v roku 1492?", a: ["Krištof Kolumbus", "Ferdinand Magellan", "Marco Polo", "Vasco da Gama"], correct: "Krištof Kolumbus" },
-    { q: "Akú farbu má smaragd?", a: ["Zelenú", "Červenú", "Modrú", "Žltú"], correct: "Zelenú" },
-    { q: "Ktorá krajina je známa ako Zem vychádzajúceho slnka?", a: ["Japonsko", "Čína", "Južná Kórea", "Vietnam"], correct: "Japonsko" },
-    { q: "Čo je Fibonacciho postupnosť?", a: ["Súčet predchádzajúcich dvoch", "Násobenie dvomi", "Delenie tromi", "Odmocnina"], correct: "Súčet predchádzajúcich dvoch" },
-    { q: "Ktorá planéta je najbližšie k Slnku?", a: ["Merkúr", "Venuša", "Mars", "Jupiter"], correct: "Merkúr" },
-    { q: "Ktorý plyn tvorí väčšinu zemskej atmosféry?", a: ["Dusík", "Kyslík", "Argón", "Oxid uhličitý"], correct: "Dusík" },
-    { q: "Koľko trvá obeh Zeme okolo Slnka?", a: ["365.25 dňa", "360 dní", "365 dní", "365.5 dňa"], correct: "365.25 dňa" },
-    { q: "Ktorý orgán detoxikuje krv?", a: ["Pečeň", "Obličky", "Srdce", "Pľúca"], correct: "Pečeň" },
-    { q: "Ako sa nazýva najvyšší vrch Afriky?", a: ["Kilimandžáro", "Mount Kenya", "Elbrus", "Mont Blanc"], correct: "Kilimandžáro" },
-    { q: "Ktorá je hlavná zložka skla?", a: ["Oxid kremičitý", "Uhličitan vápenatý", "Oxid hlinitý", "Sodík"], correct: "Oxid kremičitý" },
-    { q: "Kto namaľoval 'Monu Lízu'?", a: ["Leonardo da Vinci", "Pablo Picasso", "Vincent van Gogh", "Claude Monet"], correct: "Leonardo da Vinci" },
-    { q: "Ktorý prvok má atómové číslo 1?", a: ["Vodík", "Hélium", "Kyslík", "Uhlík"], correct: "Vodík" },
-    { q: "Čo je 'blockchain'?", a: ["Decentralizovaná databáza", "Typ meny", "Počítačový vírus", "Herný engine"], correct: "Decentralizovaná databáza" },
-    { q: "Ako sa nazýva hudobný nástroj so 4 strunami, najmenší zo sláčikových?", a: ["Husle", "Viola", "Violončelo", "Kontrabas"], correct: "Husle" }
+    { q: "Ako sa volá najväčšia tepna ľudského tela?", a: ["Aorta", "Vena", "Kapilára", "Pľúcnica"], correct: "Aorta" },
+    { q: "Ktorá farba má najkratšiu vlnovú dĺžku vo viditeľnom spektre?", a: ["Fialová", "Červená", "Zelená", "Žltá"], correct: "Fialová" },
+    { q: "Ktorý slávny film režíroval Alfred Hitchcock?", a: ["Psycho", "Vertigo", "Okno", "Provokácia"], correct: "Psycho" },
+    { q: "Ako sa volá súbor pravidiel, ktoré spravujú štát?", a: ["Ústava", "Zákon", "Dekrét", "Nariadenie"], correct: "Ústava" },
+    { q: "Ktorá plynná planéta je známa svojimi prstencami?", a: ["Saturn", "Jupiter", "Urán", "Neptún"], correct: "Saturn" },
+    { q: "Kto sformuloval tri základné zákony pohybu?", a: ["Newton", "Einstein", "Galilei", "Kepler"], correct: "Newton" },
+    { q: "Čo je hlavná zložka kostí a zubov?", a: ["Vápnik", "Sodík", "Železo", "Draslík"], correct: "Vápnik" },
+    { q: "Ktorý plyn tvorí ozónovú vrstvu?", a: ["Kyslík", "Dusík", "Vodík", "Argón"], correct: "Kyslík" },
+    { q: "Aká je základná jednotka meny v Japonsku?", a: ["Jen", "Yuan", "Won", "Rupia"], correct: "Jen" },
+    { q: "Ktorý boh bol v gréckej mytológii vládcom mora?", a: ["Poseidón", "Zeus", "Hádés", "Ares"], correct: "Poseidón" },
+    { q: "Aký je najväčší štát USA podľa rozlohy?", a: ["Aljaška", "Texas", "Kalifornia", "Florida"], correct: "Aljaška" },
+    { q: "Ako sa nazýva poplatok za požičanie peňazí?", a: ["Úrok", "Kapitál", "Dividenda", "Akcia"], correct: "Úrok" },
+    { q: "Aký je chemický vzorec vody?", a: ["H2O", "CO2", "NaCl", "CH4"], correct: "H2O" },
+    { q: "Ktorý kanál spája Atlantický a Tichý oceán?", a: ["Panamský", "Suezský", "Korintský", "Kielský"], correct: "Panamský" },
+    { q: "Ako sa nazýva najmenšia funkčná jednotka obličky?", a: ["Nefrón", "Neurón", "Hepatocyt", "Alveola"], correct: "Nefrón" },
+    { q: "Čo je formálny systém na štúdium správneho usudzovania?", a: ["Logika", "Etika", "Estetika", "Metafyzika"], correct: "Logika" },
+    { q: "Ktorý štát USA má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia" },
+    { q: "Aká je jednotka merania tlaku?", a: ["Pascal", "Joule", "Watt", "Ohm"], correct: "Pascal" },
+    { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
 ];
 
 const BATTLE_QUESTION_COUNT = 10;
