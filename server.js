@@ -23,7 +23,6 @@ const ALL_QUESTIONS = [
     { q: "Akú farbu má smaragd?", a: ["Zelenú", "Červenú", "Modrú", "Žltú"], correct: "Zelenú" },
     { q: "Ktorá krajina je známa ako Zem vychádzajúceho slnka?", a: ["Japonsko", "Čína", "Južná Kórea", "Vietnam"], correct: "Japonsko" },
     { q: "Čo je Fibonacciho postupnosť?", a: ["Súčet predchádzajúcich dvoch", "Násobenie dvomi", "Delenie tromi", "Odmocnina"], correct: "Súčet predchádzajúcich dvoch" },
-    // Ďalšie otázky pre zabezpečenie 10 unikátnych otázok
     { q: "Ktorá planéta je najbližšie k Slnku?", a: ["Merkúr", "Venuša", "Mars", "Jupiter"], correct: "Merkúr" },
     { q: "Ktorý plyn tvorí väčšinu zemskej atmosféry?", a: ["Dusík", "Kyslík", "Argón", "Oxid uhličitý"], correct: "Dusík" },
     { q: "Koľko trvá obeh Zeme okolo Slnka?", a: ["365.25 dňa", "360 dní", "365 dní", "365.5 dňa"], correct: "365.25 dňa" },
@@ -176,9 +175,9 @@ class Match {
         player.answered = true;
         player.time = time;
         player.lastAnswer = answer;
-        player.status = 'Odpovedané'; // <<< NOVÝ MEDZISTAV
+        player.status = 'Odpovedané'; 
         
-        this.sendAnswerStatusUpdate(); // <<< OKAMŽITÁ AKTUALIZÁCIA STAVU
+        this.sendAnswerStatusUpdate(); 
 
         const opponent = player === this.player1 ? this.player2 : this.player1;
         
@@ -210,7 +209,10 @@ class Match {
         // 1. Vypočítanie finálnych statusov
         this.players.forEach(p => {
             if (p.status === '?') {
-                p.status = '?'; // Hráč neodpovedal (Timeout) - Klient to interpretuje ako Timeout/Nesprávne.
+                // Timeout - ostane '?' pre server, ale klient to vyhodnotí ako Nesprávne/Čas vypršal
+                // Ak chceme explicitne posielať 'Nesprávne' v prípade timeoutu:
+                p.status = '?'; // Ponecháme '?' na serveri, aby bolo jasné, že neodpovedal.
+                
             } else if (p.status === 'Odpovedané') {
                 // Skontrolujeme odpoveď len u tých, ktorí odpovedali
                 if (p.lastAnswer === currentQ.correct) {
@@ -237,7 +239,7 @@ class Match {
             payload: {
                 ...this.getMatchData(), 
                 correctAnswer: currentQ.correct, 
-                player1Status: this.player1.status, 
+                player1Status: this.player1.status, // Bude 'Správne', 'Nesprávne', alebo '?' (Timeout)
                 player2Status: this.player2.status
             }
         });
