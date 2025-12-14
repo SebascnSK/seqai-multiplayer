@@ -38,7 +38,6 @@ const ALL_QUESTIONS = [
 
 const BATTLE_QUESTION_COUNT = 10;
 const QUESTION_DURATION_MS = 8000;
-const CLIENT_ANIMATION_DELAY = 4500; // NOVÉ: 4.5 sekundy pre úvodnú animáciu klienta
 
 const matchmakingQueue = [];
 const activeMatches = new Map(); 
@@ -109,21 +108,17 @@ class Match {
             type: 'match.found',
             payload: this.getMatchData()
         });
-        
-        // NOVÉ: Oneskoríme odoslanie prvej otázky o čas potrebný pre animáciu na klientovi
-        setTimeout(() => {
-             this.sendNextQuestion();
-        }, CLIENT_ANIMATION_DELAY); 
+        this.sendNextQuestion();
     }
 
     getMatchData() {
-        const currentQ = this.questions[this.currentQuestionIndex] || { q: "Čakáme...", a: [] };
+        const currentQ = this.questions[this.currentQuestionIndex];
         
         // Odstránime "correct" pred odoslaním na klienta
         const questionData = {
             q: currentQ.q,
             a: currentQ.a, // Randomizované odpovede
-            startTime: this.currentQuestionStartTime // POSIELAME SERVEROVÝ TIMESTAMP
+            startTime: this.currentQuestionStartTime 
         };
 
         return {
@@ -369,3 +364,4 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
