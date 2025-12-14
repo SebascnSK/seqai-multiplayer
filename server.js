@@ -37,7 +37,8 @@ const ALL_QUESTIONS = [
 ];
 
 const BATTLE_QUESTION_COUNT = 10;
-const QUESTION_DURATION_MS = 8000;
+// KĽÚČOVÁ ZMENA 2: Skrátenie času na serveri pre lepšiu synchronizáciu s klientom
+const QUESTION_DURATION_MS = 7800; 
 const CLIENT_ANIMATION_DELAY = 4500; // NOVÉ: 4.5 sekundy pre úvodnú animáciu klienta
 
 const matchmakingQueue = [];
