@@ -355,7 +355,7 @@ wss.on('connection', (ws) => {
                         // Poslať správu o víťazstve (Opponent disconnect)
                         opponent.ws.send(JSON.stringify({
                             type: 'opponent.disconnect',
-                            message: `Protihráč ${player.username} sa odpojil(a).`,
+                            message: `${player.username} sa odpojil(a). Víťazstvo`,
                         }));
                     }
                     match.cleanup(); 
@@ -364,6 +364,7 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
 
 
 
