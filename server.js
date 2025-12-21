@@ -15,11 +15,6 @@ const ALL_QUESTIONS = [
     { q: "Ktorá farba má najkratšiu vlnovú dĺžku vo viditeľnom spektre?", a: ["Fialová", "Červená", "Zelená", "Žltá"], correct: "Fialová" },
     { q: "Ktorý slávny film režíroval Alfred Hitchcock?", a: ["Psycho", "Vertigo", "Okno", "Provokácia"], correct: "Psycho" },
     { q: "Ako sa volá súbor pravidiel, ktoré spravujú štát?", a: ["Ústava", "Zákon", "Dekrét", "Nariadenie"], correct: "Ústava" },
-    { q: "Ktorá plynná planéta je známa svojimi prstencami?", a: ["Saturn", "Jupiter", "Urán", "Neptún"], correct: "Saturn" },
-    { q: "Kto sformuloval tri základné zákony pohybu?", a: ["Newton", "Einstein", "Galilei", "Kepler"], correct: "Newton" },
-    { q: "Čo je hlavná zložka kostí a zubov?", a: ["Vápnik", "Sodík", "Železo", "Draslík"], correct: "Vápnik" },
-    { q: "Ktorý plyn tvorí ozónovú vrstvu?", a: ["Kyslík", "Dusík", "Vodík", "Argón"], correct: "Kyslík" },
-    { q: "Aká je základná jednotka meny v Japonsku?", a: ["Jen", "Yuan", "Won", "Rupia"], correct: "Jen" },
     { q: "Ktorý boh bol v gréckej mytológii vládcom mora?", a: ["Poseidón", "Zeus", "Hádés", "Ares"], correct: "Poseidón" },
     { q: "Aký je najväčší štát USA podľa rozlohy?", a: ["Aljaška", "Texas", "Kalifornia", "Florida"], correct: "Aljaška" },
     { q: "Ako sa nazýva poplatok za požičanie peňazí?", a: ["Úrok", "Kapitál", "Dividenda", "Akcia"], correct: "Úrok" },
@@ -29,8 +24,23 @@ const ALL_QUESTIONS = [
     { q: "Čo je formálny systém na štúdium správneho usudzovania?", a: ["Logika", "Etika", "Estetika", "Metafyzika"], correct: "Logika" },
     { q: "Ktorý štát USA má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia" },
     { q: "Aká je jednotka merania tlaku?", a: ["Pascal", "Joule", "Watt", "Ohm"], correct: "Pascal" },
-    { q: "Aká je skratka pre bezpilotné vzdušné prostriedky?", a: ["UAV", "BVP", "IFF", "PVOS"], correct: "UAV" },
-    { q: "Ktorá z uvedených vojenských hodností je najvyššia?", a: ["Plukovník", "Kapitán", "Major", "Poručík"], correct: "Plukovník"},
+    { q: "Ktorý architektonický štýl je charakteristický oblúkmi?", a: ["Románsky", "Gotický", "Barokový", "Moderný"], correct: "Románsky" },
+    { q: "Ako sa volá hlavné mesto Fínska?", a: ["Helsinki", "Turku", "Tampere", "Espoo"], correct: "Helsinki" },
+    { q: "Ktorý hudobný kľúč sa používa najčastejšie?", a: ["Husľový", "Basový", "Altový", "Tenorový"], correct: "Husľový" },
+    { q: "Ako sa volá písmo pre nevidiacich?", a: ["Braillovo", "Latinka", "Cyrilika", "Runy"], correct: "Braillovo" },
+    { q: "V ktorom športe sa používa kimono?", a: ["Judo", "Karate", "Sumo", "Aikido"], correct: "Judo" },
+    { q: "Čo je najmenšou základnou stavebnou časticou všetkých prvkov?", a: ["Atóm", "Molekula", "Ión", "Elektrón"], correct: "Atóm" },
+    { q: "Ktorý z týchto hudobných žánrov vznikol v USA?", a: ["Jazz", "Reggae", "Flamenco", "Samba"], correct: "Jazz" },
+    { q: "Ktorý plyn sa používa na hasenie požiaru?", a: ["CO2", "O2", "H2", "N2"], correct: "CO2" },
+    { q: "Ktorá planéta má najdlhší deň?", a: ["Venuša", "Urán", "Jupiter", "Neptún"], correct: "Venuša" },
+    { q: "Ako sa volá proces tvorby mlieka u cicavcov?", a: ["Laktácia", "Gestácia", "Ovulácia", "Oxidácia"], correct: "Laktácia" },
+    { q: "Ktorý vitamín je rozpustný v tukoch?", a: ["A", "B", "C", "D"], correct: "A" },
+    { q: "Ktorý orgán sa podieľa na imunitnom systéme?", a: ["Slezina", "Pečeň", "Pankreas", "Žlčník"], correct: "Slezina" },
+    { q: "Ktorý minerál je základom soli?", a: ["Halit", "Sodík", "Draslík", "Vápnik"], correct: "Halit" },
+    { q: "Akú skratku má svetová zdravotnícka organizácia?", a: ["WHO", "UNICEF", "FAO", "IMF"], correct: "WHO" },
+    { q: "Ktorý politický systém má prezidenta aj parlament?", a: ["Republika", "Monarchia", "Diktatúra", "Autokracia"], correct: "Republika" },
+    { q: "Ako sa volá najväčší mesiac Saturna?", a: ["Titan", "Ganymed", "Callisto", "Io"], correct: "Titan" },
+    { q: "Čo tvorí najväčší ekosystém na Zemi?", a: ["Oceány", "Pohoria", "Púšte", "Pralesy"], correct: "Oceány" },
     { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
 ];
 
@@ -331,3 +341,4 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
