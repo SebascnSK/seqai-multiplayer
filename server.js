@@ -4,14 +4,11 @@ const WebSocket = require('ws');
 
 // Konfigurácia WebSocket Servera
 const wss = new WebSocket.Server({ port: 8080 }, () => {
-    // !!! DÔLEŽITÉ: Ak testujete lokálne, v home.html musíte mať 'ws://localhost:8080'
-    // Ak na Render.com, tak tamojšiu URL.
     console.log('WebSocket Server beží na porte 8080');
-    console.log('Pripravený na real-time súboje!');
 });
 
 // =======================================================
-// --- BANKA OTÁZOK (Min. 20) ---
+// --- BANKA OTÁZOK ---
 // =======================================================
 const ALL_QUESTIONS = [
     { q: "Ako sa volá najväčšia tepna ľudského tela?", a: ["Aorta", "Vena", "Kapilára", "Pľúcnica"], correct: "Aorta" },
@@ -38,10 +35,8 @@ const ALL_QUESTIONS = [
 ];
 
 const BATTLE_QUESTION_COUNT = 10;
-// ZMENA: 10 sekúnd na otázku
-const QUESTION_DURATION_MS = 10000; 
-// ZMENA: Čas potrebný na úvodnú animáciu (VS + odpočet 3,2,1)
-const INTRO_ANIMATION_DELAY = 4600; 
+const QUESTION_DURATION_MS = 10000; // 10 sekúnd
+const INTRO_ANIMATION_DELAY = 4600; // Čas na animáciu
 
 const matchmakingQueue = [];
 const activeMatches = new Map(); 
@@ -63,7 +58,7 @@ class Player {
         this.time = Infinity;
         this.matchId = null;
         this.lastAnswer = null;
-        this.status = '?'; // '?', 'Odpovedané', 'Správne', 'Nesprávne'
+        this.status = '?'; 
     }
 }
 
@@ -97,15 +92,11 @@ class Match {
 
     start() {
         activeMatches.set(this.id, this);
-        
-        // 1. Oznámime klientom, že zápas sa našiel -> Tým sa spustí VS animácia (4.5s)
         this.sendToAll({
             type: 'match.found',
             payload: this.getMatchData()
         });
 
-        // 2. POČKÁME, kým skončí animácia, a až potom pošleme prvú otázku a spustíme časovač.
-        // Tým sa zabezpečí, že progress bar začne klesať až po odpočte 3-2-1.
         setTimeout(() => {
             this.sendNextQuestion();
         }, INTRO_ANIMATION_DELAY);
@@ -113,11 +104,10 @@ class Match {
 
     getMatchData() {
         const currentQ = this.questions[this.currentQuestionIndex];
-        
         const questionData = {
             q: currentQ.q,
             a: currentQ.a, 
-            startTime: this.currentQuestionStartTime 
+            startTime: Date.now() 
         };
 
         return {
@@ -149,7 +139,6 @@ class Match {
             return;
         }
         
-        // Nastavíme čas začiatku TERAZ (až keď sa otázka reálne posiela po animácii)
         this.currentQuestionStartTime = Date.now(); 
 
         this.players.forEach(p => {
@@ -164,8 +153,6 @@ class Match {
             payload: this.getMatchData()
         });
 
-        // Spustíme serverový časovač na 10 sekúnd
-        // Ak nikto neodpovie, evaluateQuestion sa spustí automaticky
         this.questionTimer = setTimeout(() => {
             this.evaluateQuestion();
         }, QUESTION_DURATION_MS);
@@ -182,8 +169,6 @@ class Match {
         this.sendAnswerStatusUpdate(); 
 
         const opponent = player === this.player1 ? this.player2 : this.player1;
-        
-        // Ak odpovedali obaja, okamžite vyhodnotíme (nečakáme na koniec limitu)
         if (opponent.answered) {
             clearTimeout(this.questionTimer);
             this.evaluateQuestion();
@@ -208,7 +193,6 @@ class Match {
         
         this.players.forEach(p => {
             if (p.status === '?') {
-                // Čas vypršal a hráč neodpovedal
                 p.status = '?'; 
             } else if (p.status === 'Odpovedané') {
                 if (p.lastAnswer === currentQ.correct) {
@@ -236,7 +220,6 @@ class Match {
         
         this.currentQuestionIndex++;
         
-        // Krátka pauza pred ďalšou otázkou (1.5s na zobrazenie výsledku)
         setTimeout(() => {
              this.sendNextQuestion();
         }, 1500); 
@@ -263,10 +246,6 @@ class Match {
         this.players.forEach(p => p.matchId = null);
     }
 }
-
-// =======================================================
-// --- Matchmaking Logic ---
-// =======================================================
 
 function tryMatchmaking(player) {
     if (matchmakingQueue.length > 0) {
@@ -308,8 +287,7 @@ wss.on('connection', (ws) => {
                     const match = activeMatches.get(player.matchId);
                     if (match) {
                         const timeElapsed = Date.now() - match.currentQuestionStartTime; 
-                        // Akceptujeme odpoveď len v rámci limitu
-                        if (timeElapsed < QUESTION_DURATION_MS + 500) { // +500ms tolerancia siete
+                        if (timeElapsed < QUESTION_DURATION_MS + 500) { 
                              match.handleAnswer(player, data.answer, data.time);
                         }
                     }
@@ -329,13 +307,11 @@ wss.on('connection', (ws) => {
 
     ws.on('close', () => {
         if (player) {
-            // Odstrániť z fronty ak čaká
             const index = matchmakingQueue.indexOf(player);
             if (index > -1) {
                 matchmakingQueue.splice(index, 1);
             }
 
-            // Ak je v hre, ukončiť hru pre súpera
             if (player.matchId) {
                 const match = activeMatches.get(player.matchId);
                 if (match) {
@@ -343,10 +319,10 @@ wss.on('connection', (ws) => {
                     
                     const opponent = match.player1 === player ? match.player2 : match.player1;
                     if (opponent.ws.readyState === WebSocket.OPEN) {
-                        // ZMENA: Text správy pri odpojení
+                        // UPRAVENÁ SPRÁVA: HTML zvýraznenie mena
                         opponent.ws.send(JSON.stringify({
                             type: 'opponent.disconnect',
-                            message: `Protihráč ${player.username} sa odpojil.`,
+                            message: `Protihráč <span class="text-yellow-400 font-extrabold">${player.username}</span> sa odpojil.`,
                         }));
                     }
                     match.cleanup(); 
