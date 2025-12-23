@@ -58,6 +58,8 @@ const ALL_QUESTIONS = [
     { q: "Čo je najväčším kĺbom v ľudskom tele?", a: ["Koleno", "Bedro", "Rameno", "Lakeť"], correct: "Koleno" },
     { q: "Ako sa v práve nazýva vedomé porušenie zákona?", a: ["Delikt", "Prečin", "Imunita", "Kaucia"], correct: "Delikt" },
     { q: "Ako sa nazýva prístroj na meranie vlhkosti vzduchu?", a: ["Vlhkomer", "Barometer", "Teplomer", "Smerovník"], correct: "Vlhkomer" },
+    { q: "Aký je súčin čísel 3 a 2?", a: ["6", "5", "1", "-1"], correct: "6" },
+    { q: "Koľko minút má 6 hodín?", a: ["360", "300", "240", "440"], correct: "360" },
     { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
 ];
 
@@ -358,6 +360,7 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
 
 
 
