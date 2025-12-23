@@ -48,6 +48,16 @@ const ALL_QUESTIONS = [
     { q: "Ako sa v programovaní nazýva textový reťazec v kóde?", a: ["String", "Integer", "Boolean", "Float"], correct: "String" },
     { q: "Ktorý plyn je hlavnou zložkou zemného plynu?", a: ["Metán", "Propán", "Bután", "Etán"], correct: "Metán" },
     { q: "Ako sa nazýva zadná časť lode?", a: ["Korma", "Prova", "Sťažeň", "Kýl"], correct: "Korma" },
+    { q: "Ktorá časť oka je zodpovedná za farebné videnie?", a: ["Čapíky", "Tyčinky", "Rohovka", "Šošovka"], correct: "Čapíky" },
+    { q: "Ako sa nazýva dlhodobý pokles celkovej cenovej hladiny?", a: ["Deflácia", "Inflácia", "Stagnácia", "Recesia"], correct: "Deflácia" },
+    { q: "Ktorý mýtický vták sa podľa legendy znovuzrodí z popola?", a: ["Fénix", "Gryf", "Pegas", "Kraken"], correct: "Fénix" },
+    { q: "Ako sa odborne nazýva znalec vína?", a: ["Someliér", "Vinár", "Barman", "Gurmán"], correct: "Someliér" },
+    { q: "Ako sa nazýva veda o pôvode a vývoji slov?", a: ["Etymológia", "Syntax", "Fonetika", "Lexika"], correct: "Etymológia" },
+    { q: "Ktorá zložka potravy má najvyššiu energetickú hodnotu na gram?", a: ["Tuky", "Cukry", "Bielkoviny", "Vláknina"], correct: "Tuky" },
+    { q: "Ktorý slávny fyzik objavil zákon o lome svetla?", a: ["Snell", "Newton", "Hertz", "Pascal"], correct: "Snell" },
+    { q: "Čo je najväčším kĺbom v ľudskom tele?", a: ["Koleno", "Bedro", "Rameno", "Lakeť"], correct: "Koleno" },
+    { q: "Ako sa v práve nazýva vedomé porušenie zákona?", a: ["Delikt", "Prečin", "Imunita", "Kaucia"], correct: "Delikt" },
+    { q: "Ako sa nazýva prístroj na meranie vlhkosti vzduchu?", a: ["Vlhkomer", "Barometer", "Teplomer", "Smerovník"], correct: "Vlhkomer" },
     { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
 ];
 
@@ -348,5 +358,6 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
 
 
