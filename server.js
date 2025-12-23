@@ -11,18 +11,17 @@ const wss = new WebSocket.Server({ port: 8080 }, () => {
 // --- BANKA OTÁZOK ---
 // =======================================================
 const ALL_QUESTIONS = [
-    { q: "Ako sa volá najväčšia tepna ľudského tela?", a: ["Aorta", "Vena", "Kapilára", "Pľúcnica"], correct: "Aorta" },
+    { q: "Ako sa nazýva najväčšia tepna ľudského tela?", a: ["Aorta", "Vena", "Kapilára", "Pľúcnica"], correct: "Aorta" },
     { q: "Ktorá farba má najkratšiu vlnovú dĺžku vo viditeľnom spektre?", a: ["Fialová", "Červená", "Zelená", "Žltá"], correct: "Fialová" },
     { q: "Ktorý slávny film režíroval Alfred Hitchcock?", a: ["Psycho", "Vertigo", "Okno", "Provokácia"], correct: "Psycho" },
     { q: "Ako sa volá súbor pravidiel, ktoré spravujú štát?", a: ["Ústava", "Zákon", "Dekrét", "Nariadenie"], correct: "Ústava" },
-    { q: "Ktorý boh bol v gréckej mytológii vládcom mora?", a: ["Poseidón", "Zeus", "Hádés", "Ares"], correct: "Poseidón" },
-    { q: "Aký je najväčší štát USA podľa rozlohy?", a: ["Aljaška", "Texas", "Kalifornia", "Florida"], correct: "Aljaška" },
+    { q: "Ktorý boh bol v gréckej mytológii vládcom morí a oceánov?", a: ["Poseidón", "Zeus", "Hádés", "Ares"], correct: "Poseidón" },
+    { q: "Ktorý americký štát je najväčší podľa rozlohy?", a: ["Aljaška", "Texas", "Kalifornia", "Florida"], correct: "Aljaška" },
     { q: "Ako sa nazýva poplatok za požičanie peňazí?", a: ["Úrok", "Kapitál", "Dividenda", "Akcia"], correct: "Úrok" },
     { q: "Aký je chemický vzorec vody?", a: ["H2O", "CO2", "NaCl", "CH4"], correct: "H2O" },
     { q: "Ktorý kanál spája Atlantický a Tichý oceán?", a: ["Panamský", "Suezský", "Korintský", "Kielský"], correct: "Panamský" },
     { q: "Ako sa nazýva najmenšia funkčná jednotka obličky?", a: ["Nefrón", "Neurón", "Hepatocyt", "Alveola"], correct: "Nefrón" },
-    { q: "Čo je formálny systém na štúdium správneho usudzovania?", a: ["Logika", "Etika", "Estetika", "Metafyzika"], correct: "Logika" },
-    { q: "Ktorý štát USA má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia" },
+    { q: "Ktorý americký štát má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia" },
     { q: "Aká je jednotka merania tlaku?", a: ["Pascal", "Joule", "Watt", "Ohm"], correct: "Pascal" },
     { q: "Ktorý architektonický štýl je charakteristický oblúkmi?", a: ["Románsky", "Gotický", "Barokový", "Moderný"], correct: "Románsky" },
     { q: "Ako sa volá hlavné mesto Fínska?", a: ["Helsinki", "Turku", "Tampere", "Espoo"], correct: "Helsinki" },
@@ -41,6 +40,14 @@ const ALL_QUESTIONS = [
     { q: "Ktorý politický systém má prezidenta aj parlament?", a: ["Republika", "Monarchia", "Diktatúra", "Autokracia"], correct: "Republika" },
     { q: "Ako sa volá najväčší mesiac Saturna?", a: ["Titan", "Ganymed", "Callisto", "Io"], correct: "Titan" },
     { q: "Čo tvorí najväčší ekosystém na Zemi?", a: ["Oceány", "Pohoria", "Púšte", "Pralesy"], correct: "Oceány" },
+    { q: "Ktorá sociálna sieť používala ako logo modrého vtáka?", a: ["Twitter", "Facebook", "Instagram", "Messenger"], correct: "Twitter" },
+    { q: "Ako sa volá najprestížnejšie filmové ocenenie?", a: ["Oscar", "Emmy", "Grammy", "Tony"], correct: "Oscar" },
+    { q: "V ktorom meste sídli Európsky parlament?", a: ["Štrasburg", "Brusel", "Frankfurt", "Mníchov"], correct: "Štrasburg" },
+    { q: "Ako sa nazýva lekár, ktorý sa špecializuje na ochorenia obličiek?", a: ["Nefrológ", "Proktológ", "Onkológ", "Hepatológ"], correct: "Nefrológ" },
+    { q: "Ktorý chemický prvok má najvyššiu elektrickú vodivosť?", a: ["Striebro", "Meď", "Zlato", "Hliník"], correct: "Striebro" },
+    { q: "Ako sa v programovaní nazýva textový reťazec v kóde?", a: ["String", "Integer", "Boolean", "Float"], correct: "String" },
+    { q: "Ktorý plyn je hlavnou zložkou zemného plynu?", a: ["Metán", "Propán", "Bután", "Etán"], correct: "Metán" },
+    { q: "Ako sa nazýva zadná časť lode?", a: ["Korma", "Prova", "Sťažeň", "Kýl"], correct: "Korma" },
     { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
 ];
 
@@ -341,4 +348,5 @@ wss.on('connection', (ws) => {
         }
     });
 });
+
 
