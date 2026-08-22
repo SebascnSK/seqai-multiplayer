@@ -65,7 +65,7 @@ const ALL_QUESTIONS = [
 
 const BATTLE_QUESTION_COUNT = 10;
 const QUESTION_DURATION_MS = 10000; // 10 sekúnd
-const INTRO_ANIMATION_DELAY = 4600; // Čas na animáciu
+const INTRO_ANIMATION_DELAY = 8500; // Čas na animáciu
 
 const matchmakingQueue = [];
 const activeMatches = new Map(); 
