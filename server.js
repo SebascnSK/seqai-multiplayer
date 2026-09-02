@@ -1,87 +1,116 @@
 // server.js
 
 const WebSocket = require('ws');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
-// Konfigurácia WebSocket Servera
-const wss = new WebSocket.Server({ port: 8080 }, () => {
-    console.log('WebSocket Server beží na porte 8080');
+// Konfigurácia WebSocket a HTTP Servera
+const port = process.env.PORT || 8080;
+
+const server = http.createServer((req, res) => {
+    // Basic static file server
+    let filePath = '.' + req.url;
+    if (filePath === './') {
+        filePath = './home.html';
+    }
+
+    const extname = String(path.extname(filePath)).toLowerCase();
+    const mimeTypes = {
+        '.html': 'text/html',
+        '.js': 'text/javascript',
+        '.css': 'text/css',
+        '.json': 'application/json',
+        '.png': 'image/png',
+        '.jpg': 'image/jpg',
+        '.gif': 'image/gif',
+        '.svg': 'image/svg+xml',
+    };
+
+    const contentType = mimeTypes[extname] || 'application/octet-stream';
+
+    fs.readFile(filePath, (error, content) => {
+        if (error) {
+            if(error.code == 'ENOENT') {
+                res.writeHead(404, { 'Content-Type': 'text/html' });
+                res.end('404 Not Found', 'utf-8');
+            } else {
+                res.writeHead(500);
+                res.end('Sorry, check with the site admin for error: '+error.code+' ..\n');
+            }
+        } else {
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(content, 'utf-8');
+        }
+    });
+});
+
+const wss = new WebSocket.Server({ server });
+
+server.listen(port, () => {
+    console.log(`Server (HTTP + WS) beží na porte ${port}`);
 });
 
 // =======================================================
 // --- BANKA OTÁZOK ---
 // =======================================================
-const ALL_QUESTIONS = [
-    { q: "Ako sa nazýva najväčšia tepna ľudského tela?", a: ["Aorta", "Vena", "Kapilára", "Pľúcnica"], correct: "Aorta" },
-    { q: "Ktorá farba má najkratšiu vlnovú dĺžku vo viditeľnom spektre?", a: ["Fialová", "Červená", "Zelená", "Žltá"], correct: "Fialová" },
-    { q: "Ktorý slávny film režíroval Alfred Hitchcock?", a: ["Psycho", "Vertigo", "Okno", "Provokácia"], correct: "Psycho" },
-    { q: "Ako sa volá súbor pravidiel, ktoré spravujú štát?", a: ["Ústava", "Zákon", "Dekrét", "Nariadenie"], correct: "Ústava" },
-    { q: "Ktorý boh bol v gréckej mytológii vládcom morí a oceánov?", a: ["Poseidón", "Zeus", "Hádés", "Ares"], correct: "Poseidón" },
-    { q: "Ktorý americký štát je najväčší podľa rozlohy?", a: ["Aljaška", "Texas", "Kalifornia", "Florida"], correct: "Aljaška" },
-    { q: "Ako sa nazýva poplatok za požičanie peňazí?", a: ["Úrok", "Kapitál", "Dividenda", "Akcia"], correct: "Úrok" },
-    { q: "Aký je chemický vzorec vody?", a: ["H2O", "CO2", "NaCl", "CH4"], correct: "H2O" },
-    { q: "Ktorý kanál spája Atlantický a Tichý oceán?", a: ["Panamský", "Suezský", "Korintský", "Kielský"], correct: "Panamský" },
-    { q: "Ako sa nazýva najmenšia funkčná jednotka obličky?", a: ["Nefrón", "Neurón", "Hepatocyt", "Alveola"], correct: "Nefrón" },
-    { q: "Ktorý americký štát má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia" },
-    { q: "Aká je jednotka merania tlaku?", a: ["Pascal", "Joule", "Watt", "Ohm"], correct: "Pascal" },
-    { q: "Ktorý architektonický štýl je charakteristický oblúkmi?", a: ["Románsky", "Gotický", "Barokový", "Moderný"], correct: "Románsky" },
-    { q: "Ako sa volá hlavné mesto Fínska?", a: ["Helsinki", "Turku", "Tampere", "Espoo"], correct: "Helsinki" },
-    { q: "Ktorý hudobný kľúč sa používa najčastejšie?", a: ["Husľový", "Basový", "Altový", "Tenorový"], correct: "Husľový" },
-    { q: "Ako sa volá písmo pre nevidiacich?", a: ["Braillovo", "Latinka", "Cyrilika", "Runy"], correct: "Braillovo" },
-    { q: "V ktorom športe sa používa kimono?", a: ["Judo", "Karate", "Sumo", "Aikido"], correct: "Judo" },
-    { q: "Čo je najmenšou základnou stavebnou časticou všetkých prvkov?", a: ["Atóm", "Molekula", "Ión", "Elektrón"], correct: "Atóm" },
-    { q: "Ktorý z týchto hudobných žánrov vznikol v USA?", a: ["Jazz", "Reggae", "Flamenco", "Samba"], correct: "Jazz" },
-    { q: "Ktorý plyn sa používa na hasenie požiaru?", a: ["CO2", "O2", "H2", "N2"], correct: "CO2" },
-    { q: "Ktorá planéta má najdlhší deň?", a: ["Venuša", "Urán", "Jupiter", "Neptún"], correct: "Venuša" },
-    { q: "Ako sa volá proces tvorby mlieka u cicavcov?", a: ["Laktácia", "Gestácia", "Ovulácia", "Oxidácia"], correct: "Laktácia" },
-    { q: "Ktorý vitamín je rozpustný v tukoch?", a: ["A", "B", "C", "D"], correct: "A" },
-    { q: "Ktorý orgán sa podieľa na imunitnom systéme?", a: ["Slezina", "Pečeň", "Pankreas", "Žlčník"], correct: "Slezina" },
-    { q: "Ktorý minerál je základom soli?", a: ["Halit", "Sodík", "Draslík", "Vápnik"], correct: "Halit" },
-    { q: "Akú skratku má svetová zdravotnícka organizácia?", a: ["WHO", "UNICEF", "FAO", "IMF"], correct: "WHO" },
-    { q: "Ktorý politický systém má prezidenta aj parlament?", a: ["Republika", "Monarchia", "Diktatúra", "Autokracia"], correct: "Republika" },
-    { q: "Ako sa volá najväčší mesiac Saturna?", a: ["Titan", "Ganymed", "Callisto", "Io"], correct: "Titan" },
-    { q: "Čo tvorí najväčší ekosystém na Zemi?", a: ["Oceány", "Pohoria", "Púšte", "Pralesy"], correct: "Oceány" },
-    { q: "Ktorá sociálna sieť používala ako logo modrého vtáka?", a: ["Twitter", "Facebook", "Instagram", "Messenger"], correct: "Twitter" },
-    { q: "Ako sa volá najprestížnejšie filmové ocenenie?", a: ["Oscar", "Emmy", "Grammy", "Tony"], correct: "Oscar" },
-    { q: "V ktorom meste sídli Európsky parlament?", a: ["Štrasburg", "Brusel", "Frankfurt", "Mníchov"], correct: "Štrasburg" },
-    { q: "Ako sa nazýva lekár, ktorý sa špecializuje na ochorenia obličiek?", a: ["Nefrológ", "Proktológ", "Onkológ", "Hepatológ"], correct: "Nefrológ" },
-    { q: "Ktorý chemický prvok má najvyššiu elektrickú vodivosť?", a: ["Striebro", "Meď", "Zlato", "Hliník"], correct: "Striebro" },
-    { q: "Ako sa v programovaní nazýva textový reťazec v kóde?", a: ["String", "Integer", "Boolean", "Float"], correct: "String" },
-    { q: "Ktorý plyn je hlavnou zložkou zemného plynu?", a: ["Metán", "Propán", "Bután", "Etán"], correct: "Metán" },
-    { q: "Ako sa nazýva zadná časť lode?", a: ["Korma", "Prova", "Sťažeň", "Kýl"], correct: "Korma" },
-    { q: "Ktorá časť oka je zodpovedná za farebné videnie?", a: ["Čapíky", "Tyčinky", "Rohovka", "Šošovka"], correct: "Čapíky" },
-    { q: "Ako sa nazýva dlhodobý pokles celkovej cenovej hladiny?", a: ["Deflácia", "Inflácia", "Stagnácia", "Recesia"], correct: "Deflácia" },
-    { q: "Ktorý mýtický vták sa podľa legendy znovuzrodí z popola?", a: ["Fénix", "Gryf", "Pegas", "Kraken"], correct: "Fénix" },
-    { q: "Ako sa odborne nazýva znalec vína?", a: ["Someliér", "Vinár", "Barman", "Gurmán"], correct: "Someliér" },
-    { q: "Ako sa nazýva veda o pôvode a vývoji slov?", a: ["Etymológia", "Syntax", "Fonetika", "Lexika"], correct: "Etymológia" },
-    { q: "Ktorá zložka potravy má najvyššiu energetickú hodnotu na gram?", a: ["Tuky", "Cukry", "Bielkoviny", "Vláknina"], correct: "Tuky" },
-    { q: "Ktorý slávny fyzik objavil zákon o lome svetla?", a: ["Snell", "Newton", "Hertz", "Pascal"], correct: "Snell" },
-    { q: "Čo je najväčším kĺbom v ľudskom tele?", a: ["Koleno", "Bedro", "Rameno", "Lakeť"], correct: "Koleno" },
-    { q: "Ako sa v práve nazýva vedomé porušenie zákona?", a: ["Delikt", "Prečin", "Imunita", "Kaucia"], correct: "Delikt" },
-    { q: "Ako sa nazýva prístroj na meranie vlhkosti vzduchu?", a: ["Vlhkomer", "Barometer", "Teplomer", "Smerovník"], correct: "Vlhkomer" },
-    { q: "Aký je súčin čísel 3 a 2?", a: ["6", "5", "1", "-1"], correct: "6" },
-    { q: "Koľko minút má 6 hodín?", a: ["360", "300", "240", "440"], correct: "360" },
-    { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie" }
+
+const QUESTIONS_DB = [
+    { q: "Ako sa volá najväčšia tepna ľudského tela?", a: ["Aorta", "Vena", "Kapilára", "Pľúcnica"], correct: "Aorta", category: "science", type: "text" },
+    { q: "Ktorá farba má najkratšiu vlnovú dĺžku vo viditeľnom spektre?", a: ["Fialová", "Červená", "Zelená", "Žltá"], correct: "Fialová", category: "science", type: "text" },
+    { q: "Ktorý slávny film režíroval Alfred Hitchcock?", a: ["Psycho", "Vertigo", "Okno", "Provokácia"], correct: "Psycho", category: "mix", type: "text" },
+    { q: "Ako sa volá súbor pravidiel, ktoré spravujú štát?", a: ["Ústava", "Zákon", "Dekrét", "Nariadenie"], correct: "Ústava", category: "mix", type: "text" },
+    { q: "Ktorý boh bol v gréckej mytológii vládcom mora?", a: ["Poseidón", "Zeus", "Hádés", "Ares"], correct: "Poseidón", category: "history", type: "text" },
+    { q: "Aký je najväčší štát USA podľa rozlohy?", a: ["Aljaška", "Texas", "Kalifornia", "Florida"], correct: "Aljaška", category: "geography", type: "text" },
+    { q: "Ako sa nazýva poplatok za požičanie peňazí?", a: ["Úrok", "Kapitál", "Dividenda", "Akcia"], correct: "Úrok", category: "mix", type: "text" },
+    { q: "Aký je chemický vzorec vody?", a: ["H2O", "CO2", "NaCl", "CH4"], correct: "H2O", category: "science", type: "text" },
+    { q: "Ktorý kanál spája Atlantický a Tichý oceán?", a: ["Panamský", "Suezský", "Korintský", "Kielský"], correct: "Panamský", category: "geography", type: "text" },
+    { q: "Ako sa nazýva najmenšia funkčná jednotka obličky?", a: ["Nefrón", "Neurón", "Hepatocyt", "Alveola"], correct: "Nefrón", category: "science", type: "text" },
+    { q: "Čo je formálny systém na štúdium správneho usudzovania?", a: ["Logika", "Etika", "Estetika", "Metafyzika"], correct: "Logika", category: "science", type: "text" },
+    { q: "Ktorý štát USA má prezývku 'Golden State'?", a: ["Kalifornia", "Texas", "Florida", "New York"], correct: "Kalifornia", category: "geography", type: "text" },
+    { q: "Aká je jednotka merania tlaku?", a: ["Pascal", "Joule", "Watt", "Ohm"], correct: "Pascal", category: "science", type: "text" },
+    { q: "Ktorý architektonický štýl je charakteristický oblúkmi?", a: ["Románsky", "Gotický", "Barokový", "Moderný"], correct: "Románsky", category: "history", type: "text" },
+    { q: "Ako sa volá hlavné mesto Fínska?", a: ["Helsinki", "Turku", "Tampere", "Espoo"], correct: "Helsinki", category: "geography", type: "text" },
+    { q: "Ktorý hudobný kľúč sa používa najčastejšie?", a: ["Husľový", "Basový", "Altový", "Tenorový"], correct: "Husľový", category: "mix", type: "text" },
+    { q: "Ako sa volá písmo pre nevidiacich?", a: ["Braillovo", "Latinka", "Cyrilika", "Runy"], correct: "Braillovo", category: "mix", type: "text" },
+    { q: "V ktorom športe sa používa kimono?", a: ["Judo", "Karate", "Sumo", "Aikido"], correct: "Judo", category: "sport", type: "text" },
+    { q: "Čo je najmenšou základnou stavebnou časticou všetkých prvkov?", a: ["Atóm", "Molekula", "Ión", "Elektrón"], correct: "Atóm", category: "science", type: "text" },
+    { q: "Ktorý z týchto hudobných žánrov vznikol v USA?", a: ["Jazz", "Reggae", "Flamenco", "Samba"], correct: "Jazz", category: "history", type: "text" },
+    { q: "Ktorý plyn sa používa na hasenie požiaru?", a: ["CO2", "O2", "H2", "N2"], correct: "CO2", category: "science", type: "text" },
+    { q: "Ktorá planéta má najdlhší deň?", a: ["Venuša", "Urán", "Jupiter", "Neptún"], correct: "Venuša", category: "science", type: "text" },
+    { q: "Ako sa volá proces tvorby mlieka u cicavcov?", a: ["Laktácia", "Gestácia", "Ovulácia", "Oxidácia"], correct: "Laktácia", category: "science", type: "text" },
+    { q: "Ktorý vitamín je rozpustný v tukoch?", a: ["A", "B", "C", "D"], correct: "A", category: "science", type: "text" },
+    { q: "Ktorý orgán sa podieľa na imunitnom systéme?", a: ["Slezina", "Pečeň", "Pankreas", "Žlčník"], correct: "Slezina", category: "science", type: "text" },
+    { q: "Ktorý minerál je základom soli?", a: ["Halit", "Sodík", "Draslík", "Vápnik"], correct: "Halit", category: "science", type: "text" },
+    { q: "Akú skratku má svetová zdravotnícka organizácia?", a: ["WHO", "UNICEF", "FAO", "IMF"], correct: "WHO", category: "mix", type: "text" },
+    { q: "Ktorý politický systém má prezidenta aj parlament?", a: ["Republika", "Monarchia", "Diktatúra", "Autokracia"], correct: "Republika", category: "mix", type: "text" },
+    { q: "Ako sa volá najväčší mesiac Saturna?", a: ["Titan", "Ganymed", "Callisto", "Io"], correct: "Titan", category: "science", type: "text" },
+    { q: "Čo tvorí najväčší ekosystém na Zemi?", a: ["Oceány", "Pohoria", "Púšte", "Pralesy"], correct: "Oceány", category: "geography", type: "text" },
+    { q: "Ako sa nazýva proces, ktorým sa tekutina mení na plyn?", a: ["Odparovanie", "Kondenzácia", "Topenie", "Sublimácia"], correct: "Odparovanie", category: "science", type: "text" },
+    { q: "Kto napísal Rómea a Júliu?", a: ["William Shakespeare", "Charles Dickens", "Jane Austen", "Mark Twain"], correct: "William Shakespeare", category: "history", type: "text" },
+    { q: "Ktorá rieka je najdlhšia na svete?", a: ["Níl", "Amazonka", "Jang-c’-ťiang", "Mississippi"], correct: "Níl", category: "geography", type: "text" },
+    { q: "Koľko hráčov je v hokejovom tíme na ľade?", a: ["6", "5", "7", "11"], correct: "6", category: "sport", type: "text" },
+    { q: "Kde sa konali prvé moderné olympijské hry?", a: ["Atény", "Paríž", "Londýn", "Rím"], correct: "Atény", category: "sport", type: "text" },
+    { q: "Ktorý z týchto štátov nehraničí so Slovenskom?", a: ["Nemecko", "Poľsko", "Rakúsko", "Maďarsko"], correct: "Nemecko", category: "geography", type: "text" },
+    { q: "Ako sa volá najvyšší vrch sveta?", a: ["Mount Everest", "K2", "Kangčendžonga", "Lhoce"], correct: "Mount Everest", category: "geography", type: "text" },
+    
+    // Obrazkove otazky
+    { q: "Aké mesto je na obrázku?", img: "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=400&q=80", a: ["Paríž", "Rím", "Londýn", "New York"], correct: "Paríž", category: "geography", type: "image" },
+    { q: "Aký šport je na obrázku?", img: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=400&q=80", a: ["Futbal", "Basketbal", "Tenis", "Hokej"], correct: "Futbal", category: "sport", type: "image" },
+    { q: "Aké zviera je na obrázku?", img: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=400&q=80", a: ["Lev", "Tiger", "Slon", "Gepard"], correct: "Lev", category: "science", type: "image" },
+    { q: "Aká pamiatka je na obrázku?", img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=400&q=80", a: ["Koloseum", "Eiffelova veža", "Socha slobody", "Taj Mahal"], correct: "Koloseum", category: "history", type: "image" },
+    { q: "Aké auto je na obrázku?", img: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=400&q=80", a: ["Športové", "Rodinné", "Kamión", "Traktor"], correct: "Športové", category: "mix", type: "image" },
+    { q: "Aká tekutina je v pohári?", img: "https://images.unsplash.com/photo-1556881286-fc6915169721?auto=format&fit=crop&w=400&q=80", a: ["Káva", "Čaj", "Voda", "Džús"], correct: "Káva", category: "mix", type: "image" }
 ];
+
 
 const BATTLE_QUESTION_COUNT = 10;
 const QUESTION_DURATION_MS = 10000; // 10 sekúnd
-const INTRO_ANIMATION_DELAY = 8500; // Čas na animáciu
+const INTRO_ANIMATION_DELAY = 8500; // Čas na animáciu (musí sedieť s klientom VS_ANIMATION_DURATION_MS)
 
 const matchmakingQueue = [];
-const activeMatches = new Map(); 
-
-// =======================================================
-// --- PARTY MODE LOGIC ---
-// =======================================================
-const activeParties = new Map();
-
-function generatePartyCode() {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for(let i=0; i<5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-    return code;
-}
-// =======================================================
+const activeMatches = new Map();
+const activeParties = new Map(); 
 
 function shuffleArray(array) {
     const shuffled = array.map(v => ({ v, sort: Math.random() }))
@@ -91,10 +120,11 @@ function shuffleArray(array) {
 }
 
 class Player {
-    constructor(ws, username, avatar) {
+    constructor(ws, username, avatar, extras = {}) {
         this.ws = ws;
         this.username = username;
         this.avatar = avatar;
+        this.extras = extras;
         this.score = 0;
         this.answered = false;
         this.time = Infinity;
@@ -110,7 +140,7 @@ class Match {
         this.player1 = player1;
         this.player2 = player2;
         this.players = [player1, player2];
-        this.questions = this.selectQuestions(ALL_QUESTIONS, BATTLE_QUESTION_COUNT);
+        this.questions = this.selectQuestions(QUESTIONS_DB, BATTLE_QUESTION_COUNT, "mix", "text");
         this.currentQuestionIndex = 0;
         this.questionTimer = null;
         this.currentQuestionStartTime = 0;
@@ -119,13 +149,30 @@ class Match {
         player2.matchId = this.id;
     }
 
-    selectQuestions(source, count) {
-        const shuffledQuestions = shuffleArray(source).slice(0, count); 
+    selectQuestions(source, count, category = 'mix', type = 'text') {
+        let filtered = source;
+        if (category && category !== 'mix') {
+            filtered = filtered.filter(q => q.category === category);
+        }
+        if (type === 'classic') type = 'text'; if (type) {
+            filtered = filtered.filter(q => q.type === type);
+        }
+        
+        // Ak nemame dost otazok daneho typu/kategorie, doplnime mixom
+        if (filtered.length === 0) {
+            filtered = source.filter(q => q.type === type);
+            if (filtered.length === 0) {
+                filtered = source;
+            }
+        }
+        
+        const shuffledQuestions = shuffleArray(filtered).slice(0, count); 
         return shuffledQuestions.map(q => {
             const answers = [...q.a];
             const randomizedAnswers = shuffleArray(answers);
             return {
                 q: q.q,
+                img: q.img,
                 a: randomizedAnswers, 
                 correct: q.correct 
             };
@@ -289,6 +336,8 @@ class Match {
     }
 }
 
+// =======================================================
+
 function tryMatchmaking(player) {
     if (matchmakingQueue.length > 0) {
         const opponent = matchmakingQueue.shift(); 
@@ -310,68 +359,149 @@ function tryMatchmaking(player) {
     }
 }
 
-wss.on('connection', (ws) => {
-    // Premenné pre Duel (1v1)
-    let player = null;
-    
-    // Premenné pre Party mód
-    let partyCode = null;
-    let partyUsername = null;
-    let partyAvatar = null;
 
-    // Funkcia na opustenie Party miestnosti
-    function handlePartyLeave() {
-        if (!partyCode) return;
-        const party = activeParties.get(partyCode);
-        if (!party) return;
-
-        const playerIndex = party.players.findIndex(p => p.ws === ws);
-        if (playerIndex > -1) {
-            const isHost = party.players[playerIndex].isHost;
-            party.players.splice(playerIndex, 1);
-
-            if (party.players.length === 0) {
-                // Ak bola miestnosť prázdna, zmaž ju
-                activeParties.delete(partyCode);
+function leaveParty(ws, player) {
+    if (player && player.partyCode) {
+        const pCode = player.partyCode;
+        const pty = activeParties.get(pCode);
+        if (pty) {
+            pty.players = pty.players.filter(p => p.ws !== ws);
+            if (pty.players.length === 0) {
+                activeParties.delete(pCode);
             } else {
-                if (isHost) {
-                    // Ak odišiel hostiteľ, priraď hostiteľa prvému zvyšnému hráčovi
-                    party.players[0].isHost = true;
-                    party.host = party.players[0].ws;
-                    if (party.host.readyState === WebSocket.OPEN) {
-                        party.host.send(JSON.stringify({ type: 'party.host_assigned' }));
-                    }
+                if (pty.host === player.username) {
+                    pty.host = pty.players[0].username;
+                    pty.players[0].ws.send(JSON.stringify({ type: 'party.host_assigned' }));
                 }
-                // Pošli ostatným aktualizovaný zoznam
-                party.players.forEach(p => {
-                    if (p.ws.readyState === WebSocket.OPEN) {
-                        p.ws.send(JSON.stringify({
-                            type: 'party.update',
-                            payload: { players: party.players.map(pl => ({ username: pl.username, avatar: pl.avatar, isHost: pl.isHost })) }
-                        }));
+                pty.players.forEach(p => {
+                    if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
+                        p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
                     }
                 });
             }
         }
-        partyCode = null;
-        partyUsername = null;
-        partyAvatar = null;
+        player.partyCode = null;
     }
+}
+
+wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
+    let player = null;
+    ws.isAlive = true;
+
+    ws.on('pong', () => {
+        ws.isAlive = true;
+    });
 
     ws.on('message', (message) => {
         const data = JSON.parse(message.toString());
 
         switch (data.type) {
-            // =========================
-            // DUEL LOGIKA
-            // =========================
+                        case 'party.create':
+                leaveParty(ws, player);
+                const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
+                const newParty = {
+                    code: roomCode,
+                    host: data.username,
+                    players: [{ ws, username: data.username, avatar: data.avatar }],
+                    state: 'lobby'
+                };
+                activeParties.set(roomCode, newParty);
+                if (!player) player = new Player(ws, data.username, data.avatar, {});
+                player.partyCode = roomCode;
+                ws.send(JSON.stringify({ type: 'party.joined', payload: { code: roomCode, isHost: true, players: newParty.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                break;
+                        case 'party.join':
+                leaveParty(ws, player);
+                const codeToJoin = (data.code || '').toUpperCase();
+                const partyToJoin = activeParties.get(codeToJoin);
+                if (partyToJoin) {
+                    if (partyToJoin.players.length >= 10) {
+                        ws.send(JSON.stringify({ type: 'party.error', message: 'Miestnosť je plná.' }));
+                        return;
+                    }
+                    if (partyToJoin.state !== 'lobby') {
+                        ws.send(JSON.stringify({ type: 'party.error', message: 'Hra už prebieha.' }));
+                        return;
+                    }
+                    if (!player) player = new Player(ws, data.username, data.avatar, {});
+                    player.partyCode = codeToJoin;
+                    partyToJoin.players.push({ ws, username: data.username, avatar: data.avatar });
+                    ws.send(JSON.stringify({ type: 'party.joined', payload: { code: codeToJoin, isHost: false, players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                    
+                    // Broadcast update
+                    partyToJoin.players.forEach(p => {
+                        if (p.ws.readyState === WebSocket.OPEN && p.ws !== ws) {
+                            p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                        }
+                    });
+                } else {
+                    ws.send(JSON.stringify({ type: 'party.error', message: 'Miestnosť sa nenašla.' }));
+                }
+                break;
+            case 'party.leave':
+                leaveParty(ws, player);
+                break;
+
+            
+            case 'party.start':
+                if (player && player.partyCode) {
+                    const pCode = player.partyCode;
+                    const pty = activeParties.get(pCode);
+                    if (pty && pty.host === player.username) {
+                        pty.state = 'playing';
+                        pty.players.forEach(p => {
+                            if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
+                                p.ws.send(JSON.stringify({ type: 'party.started', message: 'Hra začína! (Pripravuje sa...)' }));
+                            }
+                        });
+                    }
+                }
+                break;
+
             case 'matchmaking.request':
                 if (!player) {
-                    player = new Player(ws, data.username, data.avatar);
+                    player = new Player(ws, data.username, data.avatar, data.extras || {});
                     tryMatchmaking(player);
                 }
                 break;
             
+            case 'matchmaking.reconnect':
+                if (!player) {
+                    const existingMatch = Array.from(activeMatches.values()).find(m => 
+                        m.player1.username === data.username || m.player2.username === data.username
+                    );
+                    if (existingMatch) {
+                        player = existingMatch.player1.username === data.username ? existingMatch.player1 : existingMatch.player2;
+                        player.ws = ws;
+                        
+                        const matchData = existingMatch.getMatchData();
+                        ws.send(JSON.stringify({
+                            type: 'match.found',
+                            payload: matchData
+                        }));
+                        
+                        setTimeout(() => {
+                            if (existingMatch.players.every(p => p.status !== '?')) {
+                                ws.send(JSON.stringify({
+                                    type: 'match.update',
+                                    payload: {
+                                        ...existingMatch.getMatchData(),
+                                        correctAnswer: existingMatch.questions[existingMatch.currentQuestionIndex - 1]?.correct
+                                    }
+                                }));
+                            } else {
+                                ws.send(JSON.stringify({
+                                    type: 'match.next_question',
+                                    payload: existingMatch.getMatchData()
+                                }));
+                            }
+                        }, 100);
+                    } else {
+                        ws.send(JSON.stringify({ type: 'matchmaking.error', message: 'Nenašiel sa aktívny duel na obnovenie.' }));
+                    }
+                }
+                break;
+
             case 'match.answer':
                 if (player && player.matchId) {
                     const match = activeMatches.get(player.matchId);
@@ -392,114 +522,49 @@ wss.on('connection', (ws) => {
                     }
                 }
                 break;
-
-            // =========================
-            // PARTY LOGIKA
-            // =========================
-            case 'party.create':
-                const newCode = generatePartyCode();
-                partyCode = newCode;
-                partyUsername = data.username;
-                partyAvatar = data.avatar;
-
-                const newParty = {
-                    code: newCode,
-                    host: ws,
-                    players: [{ ws, username: data.username, avatar: data.avatar, isHost: true }]
-                };
-                activeParties.set(newCode, newParty);
-
-                ws.send(JSON.stringify({
-                    type: 'party.joined',
-                    payload: {
-                        code: newCode,
-                        isHost: true,
-                        players: newParty.players.map(p => ({ username: p.username, avatar: p.avatar, isHost: p.isHost }))
+                
+            case 'matchmaking.quit_match':
+                if (player && player.matchId) {
+                    const match = activeMatches.get(player.matchId);
+                    if (match) {
+                        clearTimeout(match.questionTimer);
+                        const opponent = match.player1 === player ? match.player2 : match.player1;
+                        if (opponent.ws.readyState === WebSocket.OPEN) {
+                            opponent.ws.send(JSON.stringify({
+                                type: 'opponent.disconnect',
+                                message: `Protihráč <span class="text-yellow-400 font-extrabold">${player.username}</span> odstúpil z duelu.`
+                            }));
+                        }
+                        match.cleanup();
                     }
-                }));
-                break;
-
-            case 'party.join':
-                const codeToJoin = data.code.toUpperCase();
-                const party = activeParties.get(codeToJoin);
-
-                if (!party) {
-                    ws.send(JSON.stringify({ type: 'party.error', message: 'Miestnosť neexistuje.' }));
-                    return;
                 }
-
-                if (party.players.length >= 10) {
-                    ws.send(JSON.stringify({ type: 'party.error', message: 'Miestnosť je plná.' }));
-                    return;
-                }
-
-                if (party.players.some(p => p.username === data.username)) {
-                     ws.send(JSON.stringify({ type: 'party.error', message: 'Už ste v tejto miestnosti.' }));
-                     return;
-                }
-
-                partyCode = codeToJoin;
-                partyUsername = data.username;
-                partyAvatar = data.avatar;
-
-                party.players.push({ ws, username: data.username, avatar: data.avatar, isHost: false });
-
-                ws.send(JSON.stringify({
-                    type: 'party.joined',
-                    payload: {
-                        code: codeToJoin,
-                        isHost: false,
-                        players: party.players.map(p => ({ username: p.username, avatar: p.avatar, isHost: p.isHost }))
-                    }
-                }));
-
-                // Broadcastni updatnutý zoznam ostatným
-                party.players.forEach(p => {
-                    if (p.ws !== ws && p.ws.readyState === WebSocket.OPEN) {
-                        p.ws.send(JSON.stringify({
-                            type: 'party.update',
-                            payload: { players: party.players.map(pl => ({ username: pl.username, avatar: pl.avatar, isHost: pl.isHost })) }
-                        }));
-                    }
-                });
                 break;
-
-            case 'party.leave':
-                handlePartyLeave();
-                break;
+                
+            
         }
     });
 
     ws.on('close', () => {
-        // =========================
-        // ODPOJENIE HRÁČA
-        // =========================
-        
-        // 1. Ak bol v Party
-        handlePartyLeave();
-
-        // 2. Ak bol v Dueli
+        leaveParty(ws, player);
         if (player) {
             const index = matchmakingQueue.indexOf(player);
             if (index > -1) {
                 matchmakingQueue.splice(index, 1);
             }
-
-            if (player.matchId) {
-                const match = activeMatches.get(player.matchId);
-                if (match) {
-                    clearTimeout(match.questionTimer); 
-                    
-                    const opponent = match.player1 === player ? match.player2 : match.player1;
-                    if (opponent.ws.readyState === WebSocket.OPEN) {
-                        opponent.ws.send(JSON.stringify({
-                            type: 'opponent.disconnect',
-                            message: `Protihráč <span class="text-yellow-400 font-extrabold">${player.username}</span> sa odpojil.`,
-                        }));
-                    }
-                    match.cleanup(); 
-                }
-            }
         }
     });
+});
+
+const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        if (ws.isAlive === false) {
+            return ws.terminate();
+        }
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 3000);
+
+wss.on('close', () => {
+    clearInterval(interval);
 });
