@@ -70,6 +70,19 @@ const INTRO_ANIMATION_DELAY = 8500; // Čas na animáciu
 const matchmakingQueue = [];
 const activeMatches = new Map(); 
 
+// =======================================================
+// --- PARTY MODE LOGIC ---
+// =======================================================
+const activeParties = new Map();
+
+function generatePartyCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for(let i=0; i<5; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+}
+// =======================================================
+
 function shuffleArray(array) {
     const shuffled = array.map(v => ({ v, sort: Math.random() }))
         .sort((a, b) => a.sort - b.sort)
@@ -298,12 +311,60 @@ function tryMatchmaking(player) {
 }
 
 wss.on('connection', (ws) => {
+    // Premenné pre Duel (1v1)
     let player = null;
+    
+    // Premenné pre Party mód
+    let partyCode = null;
+    let partyUsername = null;
+    let partyAvatar = null;
+
+    // Funkcia na opustenie Party miestnosti
+    function handlePartyLeave() {
+        if (!partyCode) return;
+        const party = activeParties.get(partyCode);
+        if (!party) return;
+
+        const playerIndex = party.players.findIndex(p => p.ws === ws);
+        if (playerIndex > -1) {
+            const isHost = party.players[playerIndex].isHost;
+            party.players.splice(playerIndex, 1);
+
+            if (party.players.length === 0) {
+                // Ak bola miestnosť prázdna, zmaž ju
+                activeParties.delete(partyCode);
+            } else {
+                if (isHost) {
+                    // Ak odišiel hostiteľ, priraď hostiteľa prvému zvyšnému hráčovi
+                    party.players[0].isHost = true;
+                    party.host = party.players[0].ws;
+                    if (party.host.readyState === WebSocket.OPEN) {
+                        party.host.send(JSON.stringify({ type: 'party.host_assigned' }));
+                    }
+                }
+                // Pošli ostatným aktualizovaný zoznam
+                party.players.forEach(p => {
+                    if (p.ws.readyState === WebSocket.OPEN) {
+                        p.ws.send(JSON.stringify({
+                            type: 'party.update',
+                            payload: { players: party.players.map(pl => ({ username: pl.username, avatar: pl.avatar, isHost: pl.isHost })) }
+                        }));
+                    }
+                });
+            }
+        }
+        partyCode = null;
+        partyUsername = null;
+        partyAvatar = null;
+    }
 
     ws.on('message', (message) => {
         const data = JSON.parse(message.toString());
 
         switch (data.type) {
+            // =========================
+            // DUEL LOGIKA
+            // =========================
             case 'matchmaking.request':
                 if (!player) {
                     player = new Player(ws, data.username, data.avatar);
@@ -331,10 +392,93 @@ wss.on('connection', (ws) => {
                     }
                 }
                 break;
+
+            // =========================
+            // PARTY LOGIKA
+            // =========================
+            case 'party.create':
+                const newCode = generatePartyCode();
+                partyCode = newCode;
+                partyUsername = data.username;
+                partyAvatar = data.avatar;
+
+                const newParty = {
+                    code: newCode,
+                    host: ws,
+                    players: [{ ws, username: data.username, avatar: data.avatar, isHost: true }]
+                };
+                activeParties.set(newCode, newParty);
+
+                ws.send(JSON.stringify({
+                    type: 'party.joined',
+                    payload: {
+                        code: newCode,
+                        isHost: true,
+                        players: newParty.players.map(p => ({ username: p.username, avatar: p.avatar, isHost: p.isHost }))
+                    }
+                }));
+                break;
+
+            case 'party.join':
+                const codeToJoin = data.code.toUpperCase();
+                const party = activeParties.get(codeToJoin);
+
+                if (!party) {
+                    ws.send(JSON.stringify({ type: 'party.error', message: 'Miestnosť neexistuje.' }));
+                    return;
+                }
+
+                if (party.players.length >= 10) {
+                    ws.send(JSON.stringify({ type: 'party.error', message: 'Miestnosť je plná.' }));
+                    return;
+                }
+
+                if (party.players.some(p => p.username === data.username)) {
+                     ws.send(JSON.stringify({ type: 'party.error', message: 'Už ste v tejto miestnosti.' }));
+                     return;
+                }
+
+                partyCode = codeToJoin;
+                partyUsername = data.username;
+                partyAvatar = data.avatar;
+
+                party.players.push({ ws, username: data.username, avatar: data.avatar, isHost: false });
+
+                ws.send(JSON.stringify({
+                    type: 'party.joined',
+                    payload: {
+                        code: codeToJoin,
+                        isHost: false,
+                        players: party.players.map(p => ({ username: p.username, avatar: p.avatar, isHost: p.isHost }))
+                    }
+                }));
+
+                // Broadcastni updatnutý zoznam ostatným
+                party.players.forEach(p => {
+                    if (p.ws !== ws && p.ws.readyState === WebSocket.OPEN) {
+                        p.ws.send(JSON.stringify({
+                            type: 'party.update',
+                            payload: { players: party.players.map(pl => ({ username: pl.username, avatar: pl.avatar, isHost: pl.isHost })) }
+                        }));
+                    }
+                });
+                break;
+
+            case 'party.leave':
+                handlePartyLeave();
+                break;
         }
     });
 
     ws.on('close', () => {
+        // =========================
+        // ODPOJENIE HRÁČA
+        // =========================
+        
+        // 1. Ak bol v Party
+        handlePartyLeave();
+
+        // 2. Ak bol v Dueli
         if (player) {
             const index = matchmakingQueue.indexOf(player);
             if (index > -1) {
@@ -348,7 +492,6 @@ wss.on('connection', (ws) => {
                     
                     const opponent = match.player1 === player ? match.player2 : match.player1;
                     if (opponent.ws.readyState === WebSocket.OPEN) {
-                        // UPRAVENÁ SPRÁVA: HTML zvýraznenie mena
                         opponent.ws.send(JSON.stringify({
                             type: 'opponent.disconnect',
                             message: `Protihráč <span class="text-yellow-400 font-extrabold">${player.username}</span> sa odpojil.`,
@@ -360,7 +503,3 @@ wss.on('connection', (ws) => {
         }
     });
 });
-
-
-
-
