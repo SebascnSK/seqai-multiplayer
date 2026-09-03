@@ -375,7 +375,7 @@ function leaveParty(ws, player) {
                 }
                 pty.players.forEach(p => {
                     if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
-                        p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                        p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === pty.host})) } }));
                     }
                 });
             }
@@ -408,7 +408,7 @@ wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
                 activeParties.set(roomCode, newParty);
                 if (!player) player = new Player(ws, data.username, data.avatar, {});
                 player.partyCode = roomCode;
-                ws.send(JSON.stringify({ type: 'party.joined', payload: { code: roomCode, isHost: true, players: newParty.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                ws.send(JSON.stringify({ type: 'party.joined', payload: { code: roomCode, isHost: true, players: newParty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === newParty.host})) } }));
                 break;
                         case 'party.join':
                 leaveParty(ws, player);
@@ -426,12 +426,12 @@ wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
                     if (!player) player = new Player(ws, data.username, data.avatar, {});
                     player.partyCode = codeToJoin;
                     partyToJoin.players.push({ ws, username: data.username, avatar: data.avatar });
-                    ws.send(JSON.stringify({ type: 'party.joined', payload: { code: codeToJoin, isHost: false, players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                    ws.send(JSON.stringify({ type: 'party.joined', payload: { code: codeToJoin, isHost: false, players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === partyToJoin.host})) } }));
                     
                     // Broadcast update
                     partyToJoin.players.forEach(p => {
                         if (p.ws.readyState === WebSocket.OPEN && p.ws !== ws) {
-                            p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar})) } }));
+                            p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === partyToJoin.host})) } }));
                         }
                     });
                 } else {
