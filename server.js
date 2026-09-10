@@ -365,32 +365,19 @@ function leaveParty(ws, player) {
         const pCode = player.partyCode;
         const pty = activeParties.get(pCode);
         if (pty) {
-            if (pty.host === player.username) {
-                // Host odišiel, zrušíme miestnosť
-                pty.players.forEach(p => {
-                    if (p.ws !== ws && p.ws.readyState === 1 /* WebSocket.OPEN */) {
-                        p.ws.send(JSON.stringify({ 
-                            type: 'party.closed', 
-                            message: 'Hostiteľ sa odpojil. Miestnosť bola zrušená.' 
-                        }));
-                    }
-                });
+            pty.players = pty.players.filter(p => p.ws !== ws);
+            if (pty.players.length === 0) {
                 activeParties.delete(pCode);
             } else {
-                // Bežný hráč odišiel
-                pty.players = pty.players.filter(p => p.ws !== ws);
-                if (pty.players.length === 0) {
-                    activeParties.delete(pCode);
-                } else {
-                    pty.players.forEach(p => {
-                        if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
-                            p.ws.send(JSON.stringify({ 
-                                type: 'party.update', 
-                                payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === pty.host})) } 
-                            }));
-                        }
-                    });
+                if (pty.host === player.username) {
+                    pty.host = pty.players[0].username;
+                    pty.players[0].ws.send(JSON.stringify({ type: 'party.host_assigned' }));
                 }
+                pty.players.forEach(p => {
+                    if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
+                        p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === pty.host})) } }));
+                    }
+                });
             }
         }
         player.partyCode = null;
@@ -412,10 +399,8 @@ wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
                         case 'party.create':
                 leaveParty(ws, player);
                 const roomCode = Math.random().toString(36).substring(2, 7).toUpperCase();
-                const roomName = data.roomName || 'Párty';
                 const newParty = {
                     code: roomCode,
-                    name: roomName,
                     host: data.username,
                     players: [{ ws, username: data.username, avatar: data.avatar }],
                     state: 'lobby'
@@ -423,7 +408,7 @@ wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
                 activeParties.set(roomCode, newParty);
                 if (!player) player = new Player(ws, data.username, data.avatar, {});
                 player.partyCode = roomCode;
-                ws.send(JSON.stringify({ type: 'party.joined', payload: { code: roomCode, name: roomName, isHost: true, players: newParty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === newParty.host})) } }));
+                ws.send(JSON.stringify({ type: 'party.joined', payload: { code: roomCode, isHost: true, players: newParty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === newParty.host})) } }));
                 break;
                         case 'party.join':
                 leaveParty(ws, player);
@@ -441,7 +426,7 @@ wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
                     if (!player) player = new Player(ws, data.username, data.avatar, {});
                     player.partyCode = codeToJoin;
                     partyToJoin.players.push({ ws, username: data.username, avatar: data.avatar });
-                    ws.send(JSON.stringify({ type: 'party.joined', payload: { code: codeToJoin, name: partyToJoin.name, isHost: false, players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === partyToJoin.host})) } }));
+                    ws.send(JSON.stringify({ type: 'party.joined', payload: { code: codeToJoin, isHost: false, players: partyToJoin.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === partyToJoin.host})) } }));
                     
                     // Broadcast update
                     partyToJoin.players.forEach(p => {
@@ -547,7 +532,7 @@ wss.on('connection', (ws) => { console.log('NEW WS CONNECTION');
                         if (opponent.ws.readyState === WebSocket.OPEN) {
                             opponent.ws.send(JSON.stringify({
                                 type: 'opponent.disconnect',
-                                message: `Protihráč <span class="text-yellow-400 font-extrabold">${player.username}</span> odstúpil z duelu.`
+                                message: `Protihráč <span class="text-sky-500 font-extrabold">${player.username}</span> odstúpil z duelu.`
                             }));
                         }
                         match.cleanup();
