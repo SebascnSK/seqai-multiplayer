@@ -365,19 +365,32 @@ function leaveParty(ws, player) {
         const pCode = player.partyCode;
         const pty = activeParties.get(pCode);
         if (pty) {
-            pty.players = pty.players.filter(p => p.ws !== ws);
-            if (pty.players.length === 0) {
-                activeParties.delete(pCode);
-            } else {
-                if (pty.host === player.username) {
-                    pty.host = pty.players[0].username;
-                    pty.players[0].ws.send(JSON.stringify({ type: 'party.host_assigned' }));
-                }
+            if (pty.host === player.username) {
+                // Host left, destroy the room
                 pty.players.forEach(p => {
-                    if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
-                        p.ws.send(JSON.stringify({ type: 'party.update', payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === pty.host})) } }));
+                    if (p.ws !== ws && p.ws.readyState === 1 /* WebSocket.OPEN */) {
+                        p.ws.send(JSON.stringify({ 
+                            type: 'party.closed', 
+                            message: 'Hostiteľ sa odpojil a miestnosť bola zrušená.' 
+                        }));
                     }
                 });
+                activeParties.delete(pCode);
+            } else {
+                // Regular player left
+                pty.players = pty.players.filter(p => p.ws !== ws);
+                if (pty.players.length === 0) {
+                    activeParties.delete(pCode);
+                } else {
+                    pty.players.forEach(p => {
+                        if (p.ws.readyState === 1 /* WebSocket.OPEN */) {
+                            p.ws.send(JSON.stringify({ 
+                                type: 'party.update', 
+                                payload: { players: pty.players.map(p => ({username: p.username, avatar: p.avatar, isHost: p.username === pty.host})) } 
+                            }));
+                        }
+                    });
+                }
             }
         }
         player.partyCode = null;
