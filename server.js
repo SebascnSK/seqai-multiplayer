@@ -9,7 +9,60 @@ const path = require('path');
 const port = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
+    if (req.url.startsWith('/login_save.php')) {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            let user = 'user';
+            try {
+                const parsed = JSON.parse(body);
+                if (parsed.username) user = parsed.username;
+            } catch(e) {}
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: "Prihlásenie úspešné.", avatar: "av1.png" }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/register_save.php')) {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, message: "Váš účet bol úspešne vytvorený." }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/get_user_data.php')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, data: { stats: { elo: 1000, wins: 0, losses: 0, total_games: 0 }, created_at: "2026-01-01", email: "", badges: [] } }));
+        return;
+    }
+
     if (req.url.startsWith('/anticheat_warn.php')) {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, warnings: 1 }));
+        });
+        return;
+    }
+
+    if (req.url.startsWith('/get_leaderboard.php')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, leaderboard: [] }));
+        return;
+    }
+
+    if (req.url.startsWith('/get_league_legends.php')) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, legends: [] }));
+        return;
+    }
+
+    if (req.url.includes('.php')) {
         let body = '';
         req.on('data', chunk => { body += chunk; });
         req.on('end', () => {
