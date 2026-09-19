@@ -9,6 +9,16 @@ const path = require('path');
 const port = process.env.PORT || 8080;
 
 const server = http.createServer((req, res) => {
+    if (req.url.startsWith('/anticheat_warn.php')) {
+        let body = '';
+        req.on('data', chunk => { body += chunk; });
+        req.on('end', () => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+        });
+        return;
+    }
+
     // Basic static file server
     let filePath = '.' + req.url;
     if (filePath === './') {
